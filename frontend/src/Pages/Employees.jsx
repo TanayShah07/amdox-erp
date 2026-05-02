@@ -8,14 +8,18 @@ const Employees = () => {
   const [projects, setProjects] = useState("");
   const [employees, setEmployees] = useState([]);
   const [editId, setEditId] = useState(null);
+  const [search, setSearch] = useState("");
+const [filterRole, setFilterRole] = useState("");
 
   const navigate = useNavigate();
 
   const fetchEmployees = async () => {
-    const res = await fetch("http://localhost:5000/employees");
-    const data = await res.json();
-    setEmployees(data);
-  };
+  const res = await fetch(
+    `http://localhost:5000/employees?search=${search}&role=${filterRole}`
+  );
+  const data = await res.json();
+  setEmployees(data);
+};
 
   const addOrUpdateEmployee = async () => {
     const body = {
@@ -63,8 +67,8 @@ const Employees = () => {
   };
 
   useEffect(() => {
-    fetchEmployees();
-  }, []);
+  fetchEmployees();
+}, [search, filterRole]);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -92,6 +96,24 @@ const Employees = () => {
 
       <div className="flex-1 p-8">
         <h1 className="text-3xl font-bold mb-6">Employees</h1>
+        <div className="flex gap-4 mb-4">
+  <input
+    className="p-3 border rounded-lg w-1/2"
+    placeholder="Search employees..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+  />
+
+  <select
+    className="p-3 border rounded-lg"
+    value={filterRole}
+    onChange={(e) => setFilterRole(e.target.value)}
+  >
+    <option value="">All Roles</option>
+    <option value="Manager">Manager</option>
+    <option value="Developer">Developer</option>
+  </select>
+</div>
 
         <div className="bg-white p-6 rounded-xl shadow mb-6">
           <div className="grid grid-cols-4 gap-3">
