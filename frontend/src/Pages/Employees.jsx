@@ -9,19 +9,56 @@ const Employees = () => {
   const [employees, setEmployees] = useState([]);
   const [editId, setEditId] = useState(null);
   const [search, setSearch] = useState("");
-const [filterRole, setFilterRole] = useState("");
+  const [filterRole, setFilterRole] = useState("");
 
   const navigate = useNavigate();
 
-  const fetchEmployees = async () => {
-  const res = await fetch(
-    `http://localhost:5000/employees?search=${search}&role=${filterRole}`
-  );
-  const data = await res.json();
-  setEmployees(data);
-};
+  // 🔐 Always get fresh token (important)
+  const getToken = () => localStorage.getItem("token");
 
+  // 🔐 FETCH EMPLOYEES
+  const fetchEmployees = async () => {
+    const token = getToken();
+
+    if (!token) {
+      navigate("/");
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `http://localhost:5000/employees?search=${search}&role=${filterRole}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // ❗ handle unauthorized
+      if (!res.ok) {
+        console.log("Unauthorized - redirecting");
+        localStorage.removeItem("token");
+        navigate("/");
+        return;
+      }
+
+      const data = await res.json();
+      setEmployees(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // ➕ ADD / UPDATE
   const addOrUpdateEmployee = async () => {
+    const token = getToken();
+
+    if (!token) {
+      navigate("/");
+      return;
+    }
+
     const body = {
       name,
       role,
@@ -29,35 +66,64 @@ const [filterRole, setFilterRole] = useState("");
       projects: Number(projects),
     };
 
-    if (editId) {
-      await fetch(`http://localhost:5000/employees/${editId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      setEditId(null);
-    } else {
-      await fetch("http://localhost:5000/employees", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+    try {
+      if (editId) {
+        await fetch(`http://localhost:5000/employees/${editId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        });
+        setEditId(null);
+      } else {
+        await fetch("http://localhost:5000/employees", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        });
+      }
+
+      // reset form
+      setName("");
+      setRole("");
+      setSalary("");
+      setProjects("");
+
+      fetchEmployees();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // ❌ DELETE
+  const deleteEmployee = async (id) => {
+    const token = getToken();
+
+    if (!token) {
+      navigate("/");
+      return;
     }
 
-    setName("");
-    setRole("");
-    setSalary("");
-    setProjects("");
-    fetchEmployees();
+    try {
+      await fetch(`http://localhost:5000/employees/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      fetchEmployees();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const deleteEmployee = async (id) => {
-    await fetch(`http://localhost:5000/employees/${id}`, {
-      method: "DELETE",
-    });
-    fetchEmployees();
-  };
-
+  // ✏️ EDIT
   const editEmployee = (emp) => {
     setName(emp.name);
     setRole(emp.role);
@@ -66,12 +132,20 @@ const [filterRole, setFilterRole] = useState("");
     setEditId(emp.id);
   };
 
+  // 🔐 INITIAL LOAD + FILTER
   useEffect(() => {
-  fetchEmployees();
-}, [search, filterRole]);
+    fetchEmployees();
+  }, [search, filterRole]);
+
+  // 🚪 LOGOUT
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* SIDEBAR */}
       <div className="w-64 bg-gray-900 text-white p-6 flex flex-col">
         <h2 className="text-2xl font-bold mb-8">ERP</h2>
 
@@ -87,34 +161,38 @@ const [filterRole, setFilterRole] = useState("");
         </button>
 
         <button
-          onClick={() => navigate("/")}
+          onClick={handleLogout}
           className="mt-auto text-left px-3 py-2 rounded text-red-400 hover:bg-gray-700"
         >
           Logout
         </button>
       </div>
 
+      {/* MAIN */}
       <div className="flex-1 p-8">
         <h1 className="text-3xl font-bold mb-6">Employees</h1>
+
+        {/* SEARCH + FILTER */}
         <div className="flex gap-4 mb-4">
-  <input
-    className="p-3 border rounded-lg w-1/2"
-    placeholder="Search employees..."
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-  />
+          <input
+            className="p-3 border rounded-lg w-1/2"
+            placeholder="Search employees..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
 
-  <select
-    className="p-3 border rounded-lg"
-    value={filterRole}
-    onChange={(e) => setFilterRole(e.target.value)}
-  >
-    <option value="">All Roles</option>
-    <option value="Manager">Manager</option>
-    <option value="Developer">Developer</option>
-  </select>
-</div>
+          <select
+            className="p-3 border rounded-lg"
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value)}
+          >
+            <option value="">All Roles</option>
+            <option value="Manager">Manager</option>
+            <option value="Developer">Developer</option>
+          </select>
+        </div>
 
+        {/* FORM */}
         <div className="bg-white p-6 rounded-xl shadow mb-6">
           <div className="grid grid-cols-4 gap-3">
             <input
@@ -154,6 +232,7 @@ const [filterRole, setFilterRole] = useState("");
           </button>
         </div>
 
+        {/* TABLE */}
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <table className="w-full text-left">
             <thead className="bg-gray-200">
@@ -192,6 +271,12 @@ const [filterRole, setFilterRole] = useState("");
               ))}
             </tbody>
           </table>
+
+          {employees.length === 0 && (
+            <p className="text-center p-4 text-gray-500">
+              No employees found
+            </p>
+          )}
         </div>
       </div>
     </div>

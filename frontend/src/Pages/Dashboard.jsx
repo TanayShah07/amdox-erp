@@ -8,39 +8,59 @@ const Dashboard = () => {
   const [totalSalary, setTotalSalary] = useState(0);
   const [totalProjects, setTotalProjects] = useState(0);
 
-  const fetchEmployees = async () => {
-    const res = await fetch("http://localhost:5000/employees");
-    const data = await res.json();
+  const token = localStorage.getItem("token");
 
-    setEmployeesCount(data.length);
+  // 🔐 FETCH DASHBOARD
+  const fetchDashboard = async () => {
+    if (!token) {
+      navigate("/");
+      return;
+    }
 
-    const salarySum = data.reduce(
-      (sum, emp) => sum + Number(emp.salary || 0),
-      0
-    );
+    try {
+      const res = await fetch("http://localhost:5000/dashboard", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    const projectsSum = data.reduce(
-      (sum, emp) => sum + Number(emp.projects || 0),
-      0
-    );
+      // ❗ VERY IMPORTANT (handle unauthorized)
+      if (!res.ok) {
+        console.log("Unauthorized - redirecting");
+        localStorage.removeItem("token");
+        navigate("/");
+        return;
+      }
 
-    setTotalSalary(salarySum);
-    setTotalProjects(projectsSum);
+      const data = await res.json();
+
+      setEmployeesCount(data.totalEmployees);
+      setTotalSalary(data.totalSalary);
+      setTotalProjects(data.totalProjects);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
-    fetchEmployees();
+    fetchDashboard();
+
+    const interval = setInterval(fetchDashboard, 5000);
+    return () => clearInterval(interval);
   }, []);
+
+  // 🚪 LOGOUT
+  const logout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
       <div className="w-64 bg-gray-900 text-white p-6 flex flex-col">
         <h2 className="text-2xl font-bold mb-8">ERP</h2>
 
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="mb-3 text-left px-3 py-2 rounded bg-gray-700"
-        >
+        <button className="mb-3 text-left px-3 py-2 rounded bg-gray-700">
           Dashboard
         </button>
 
@@ -52,7 +72,7 @@ const Dashboard = () => {
         </button>
 
         <button
-          onClick={() => navigate("/")}
+          onClick={logout}
           className="mt-auto text-left px-3 py-2 rounded text-red-400 hover:bg-gray-700"
         >
           Logout
@@ -64,17 +84,17 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="text-gray-500 mb-2">Total Employees</h3>
+            <h3>Total Employees</h3>
             <p className="text-2xl font-bold">{employeesCount}</p>
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="text-gray-500 mb-2">Total Salary</h3>
+            <h3>Total Salary</h3>
             <p className="text-2xl font-bold">{totalSalary}</p>
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="text-gray-500 mb-2">Total Projects</h3>
+            <h3>Total Projects</h3>
             <p className="text-2xl font-bold">{totalProjects}</p>
           </div>
         </div>

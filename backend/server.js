@@ -1,21 +1,30 @@
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import pool from "./db.js";
+
 dotenv.config();
-console.log("DB PASSWORD:", process.env.DB_PASSWORD);
-console.log("TYPE:", typeof process.env.DB_PASSWORD);
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
+const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
+
+/* ================= AUTH ================= */
+
+// ✅ SIGNUP
 app.post("/signup", async (req, res) => {
-  console.log("SIGNUP API HIT");
   const { name, email, password } = req.body;
 
+  if (!name || !email || !password) {
+    return res.json({ success: false, message: "All fields required" });
+  }
+
   try {
-    // Check if user already exists
     const user = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
@@ -25,22 +34,27 @@ app.post("/signup", async (req, res) => {
       return res.json({ success: false, message: "User already exists" });
     }
 
-    // Insert new user
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     await pool.query(
       "INSERT INTO users (name, email, password) VALUES ($1, $2, $3)",
-      [name, email, password]
+      [name, email, hashedPassword]
     );
 
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.json({ success: false });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
+// ✅ LOGIN (SECURE)
 app.post("/login", async (req, res) => {
-  console.log("LOGIN API HIT");
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.json({ success: false, message: "Invalid credentials" });
+  }
 
   try {
     const result = await pool.query(
@@ -49,36 +63,70 @@ app.post("/login", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.json({ success: false, message: "User not found" });
+      return res.json({ success: false, message: "Invalid credentials" });
     }
 
     const user = result.rows[0];
 
-    if (user.password !== password) {
-      return res.json({ success: false, message: "Wrong password" });
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.json({ success: false, message: "Invalid credentials" });
     }
 
-    res.json({ success: true });
+    // 🔐 CREATE TOKEN
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.json({ success: true, token });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-app.get("/employees", async (req, res) => {
+/* ================= MIDDLEWARE ================= */
+
+// 🔐 AUTH MIDDLEWARE (FIXED)
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
+  try {
+    // ✅ EXPECT: "Bearer TOKEN"
+    const token = authHeader.split(" ")[1];
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};
+
+/* ================= EMPLOYEES ================= */
+
+// GET employees
+app.get("/employees", authMiddleware, async (req, res) => {
   const { search, role } = req.query;
 
   try {
     let query = "SELECT * FROM employees WHERE 1=1";
     let values = [];
 
-    // 🔍 Search by name
     if (search) {
       values.push(`%${search}%`);
       query += ` AND name ILIKE $${values.length}`;
     }
 
-    // 🎯 Filter by role
     if (role) {
       values.push(role);
       query += ` AND role = $${values.length}`;
@@ -87,12 +135,12 @@ app.get("/employees", async (req, res) => {
     const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "error" });
   }
 });
 
-app.post("/employees", async (req, res) => {
+// ADD employee
+app.post("/employees", authMiddleware, async (req, res) => {
   const { name, role, salary, projects } = req.body;
 
   try {
@@ -107,9 +155,10 @@ app.post("/employees", async (req, res) => {
   }
 });
 
-app.put("/employees/:id", async (req, res) => {
-  const id = req.params.id;
+// UPDATE employee
+app.put("/employees/:id", authMiddleware, async (req, res) => {
   const { name, role, salary, projects } = req.body;
+  const id = req.params.id;
 
   try {
     await pool.query(
@@ -123,7 +172,8 @@ app.put("/employees/:id", async (req, res) => {
   }
 });
 
-app.delete("/employees/:id", async (req, res) => {
+// DELETE employee
+app.delete("/employees/:id", authMiddleware, async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -134,6 +184,26 @@ app.delete("/employees/:id", async (req, res) => {
   }
 });
 
+/* ================= DASHBOARD ================= */
+
+app.get("/dashboard", authMiddleware, async (req, res) => {
+  try {
+    const employees = await pool.query("SELECT COUNT(*) FROM employees");
+    const salary = await pool.query("SELECT SUM(salary) FROM employees");
+    const projects = await pool.query("SELECT SUM(projects) FROM employees");
+
+    res.json({
+      totalEmployees: parseInt(employees.rows[0].count),
+      totalSalary: parseInt(salary.rows[0].sum) || 0,
+      totalProjects: parseInt(projects.rows[0].sum) || 0,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "error" });
+  }
+});
+
+/* ================= SERVER ================= */
+
 app.listen(5000, () => {
-  console.log("Server running on port 5000");
+  console.log("Server running on port 5000 🚀");
 });
