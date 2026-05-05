@@ -10,47 +10,49 @@ export default function Dashboard() {
   const [totalSalary, setTotalSalary] = useState(0);
   const [totalProjects, setTotalProjects] = useState(0);
 
-  const fetchEmployees = async () => {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
+  const fetchDashboard = async () => {
     if (!token) {
       navigate("/");
       return;
     }
 
-    const res = await fetch("http://localhost:5000/employees", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      const res = await fetch("http://localhost:5000/dashboard", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    if (res.status === 401) {
-      localStorage.removeItem("token");
-      navigate("/");
-      return;
+      if (!res.ok) {
+        console.log("Unauthorized - redirecting");
+        localStorage.removeItem("token");
+        navigate("/");
+        return;
+      }
+
+      const data = await res.json();
+
+      setEmployeesCount(data.totalEmployees);
+      setTotalSalary(data.totalSalary);
+      setTotalProjects(data.totalProjects);
+    } catch (err) {
+      console.error(err);
     }
-
-    const data = await res.json();
-
-    setEmployeesCount(data.length);
-
-    const salarySum = data.reduce(
-      (sum, emp) => sum + Number(emp.salary || 0),
-      0
-    );
-
-    const projectsSum = data.reduce(
-      (sum, emp) => sum + Number(emp.projects || 0),
-      0
-    );
-
-    setTotalSalary(salarySum);
-    setTotalProjects(projectsSum);
   };
 
   useEffect(() => {
-    fetchEmployees();
+    fetchDashboard();
+
+    const interval = setInterval(fetchDashboard, 5000);
+    return () => clearInterval(interval);
   }, []);
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">

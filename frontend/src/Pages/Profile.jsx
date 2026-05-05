@@ -17,22 +17,27 @@ export default function Profile() {
       return;
     }
 
-    const res = await fetch("http://localhost:5000/profile", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      const res = await fetch("http://localhost:5000/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    if (res.status === 401) {
+      if (!res.ok) {
+        localStorage.removeItem("token");
+        navigate("/");
+        return;
+      }
+
+      const data = await res.json();
+
+      setName(data.name || "");
+      setEmail(data.email || "");
+    } catch {
       localStorage.removeItem("token");
       navigate("/");
-      return;
     }
-
-    const data = await res.json();
-
-    setName(data.name);
-    setEmail(data.email);
   };
 
   useEffect(() => {
@@ -52,23 +57,27 @@ export default function Profile() {
       return;
     }
 
-    const res = await fetch("http://localhost:5000/change-password", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ password, newPassword }),
-    });
+    try {
+      const res = await fetch("http://localhost:5000/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password, newPassword }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.success) {
-      alert("Password updated");
-      setPassword("");
-      setNewPassword("");
-    } else {
-      alert("Wrong password");
+      if (data.success) {
+        alert("Password updated");
+        setPassword("");
+        setNewPassword("");
+      } else {
+        alert("Wrong password");
+      }
+    } catch {
+      alert("Server error");
     }
   };
 

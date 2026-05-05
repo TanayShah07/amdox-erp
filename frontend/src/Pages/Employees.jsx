@@ -15,8 +15,10 @@ export default function Employees() {
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
 
+  const getToken = () => localStorage.getItem("token");
+
   const fetchEmployees = async () => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
 
     if (!token) {
       navigate("/");
@@ -47,7 +49,7 @@ export default function Employees() {
   };
 
   const fetchRoles = async () => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
 
     const res = await fetch("http://localhost:5000/employees", {
       headers: {
@@ -73,7 +75,7 @@ export default function Employees() {
   }, []);
 
   const addEmployee = async () => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
 
     await fetch("http://localhost:5000/employees", {
       method: "POST",
@@ -94,7 +96,7 @@ export default function Employees() {
   };
 
   const deleteEmployee = async (id) => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
 
     await fetch(`http://localhost:5000/employees/${id}`, {
       method: "DELETE",
