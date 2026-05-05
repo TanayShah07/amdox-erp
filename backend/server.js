@@ -7,6 +7,11 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "./db.js";
 
+<<<<<<< HEAD
+=======
+dotenv.config();
+
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
 const app = express();
 
 app.use(
@@ -18,6 +23,7 @@ app.use(
 
 app.use(express.json());
 
+<<<<<<< HEAD
 const authMiddleware = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 
@@ -34,8 +40,19 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+=======
+const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
+
+/* ================= AUTH ================= */
+
+// ✅ SIGNUP
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    return res.json({ success: false, message: "All fields required" });
+  }
 
   try {
     const user = await pool.query(
@@ -55,13 +72,24 @@ app.post("/signup", async (req, res) => {
     );
 
     res.json({ success: true });
+<<<<<<< HEAD
   } catch {
     res.status(500).json({ success: false });
+=======
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
   }
 });
 
+// ✅ LOGIN (SECURE)
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.json({ success: false, message: "Invalid credentials" });
+  }
 
   try {
     const result = await pool.query(
@@ -70,7 +98,11 @@ app.post("/login", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+<<<<<<< HEAD
       return res.json({ success: false });
+=======
+      return res.json({ success: false, message: "Invalid credentials" });
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
     }
 
     const user = result.rows[0];
@@ -78,16 +110,27 @@ app.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
+<<<<<<< HEAD
       return res.json({ success: false });
     }
 
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET,
+=======
+      return res.json({ success: false, message: "Invalid credentials" });
+    }
+
+    // 🔐 CREATE TOKEN
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      JWT_SECRET,
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
       { expiresIn: "1h" }
     );
 
     res.json({ success: true, token });
+<<<<<<< HEAD
   } catch {
     res.status(500).json({ success: false });
   }
@@ -140,6 +183,41 @@ app.post("/change-password", authMiddleware, async (req, res) => {
   }
 });
 
+=======
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+/* ================= MIDDLEWARE ================= */
+
+// 🔐 AUTH MIDDLEWARE (FIXED)
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
+  try {
+    // ✅ EXPECT: "Bearer TOKEN"
+    const token = authHeader.split(" ")[1];
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};
+
+/* ================= EMPLOYEES ================= */
+
+// GET employees
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
 app.get("/employees", authMiddleware, async (req, res) => {
   const { search, role } = req.query;
 
@@ -159,11 +237,19 @@ app.get("/employees", authMiddleware, async (req, res) => {
 
     const result = await pool.query(query, values);
     res.json(result.rows);
+<<<<<<< HEAD
   } catch {
+=======
+  } catch (err) {
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
     res.status(500).json({ error: "error" });
   }
 });
 
+<<<<<<< HEAD
+=======
+// ADD employee
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
 app.post("/employees", authMiddleware, async (req, res) => {
   const { name, role, salary, projects } = req.body;
 
@@ -179,9 +265,15 @@ app.post("/employees", authMiddleware, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 app.put("/employees/:id", authMiddleware, async (req, res) => {
   const id = req.params.id;
+=======
+// UPDATE employee
+app.put("/employees/:id", authMiddleware, async (req, res) => {
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
   const { name, role, salary, projects } = req.body;
+  const id = req.params.id;
 
   try {
     await pool.query(
@@ -195,6 +287,10 @@ app.put("/employees/:id", authMiddleware, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
+=======
+// DELETE employee
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
 app.delete("/employees/:id", authMiddleware, async (req, res) => {
   const id = req.params.id;
 
@@ -206,4 +302,30 @@ app.delete("/employees/:id", authMiddleware, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 app.listen(5000, () => console.log("Server running on 5000"));
+=======
+/* ================= DASHBOARD ================= */
+
+app.get("/dashboard", authMiddleware, async (req, res) => {
+  try {
+    const employees = await pool.query("SELECT COUNT(*) FROM employees");
+    const salary = await pool.query("SELECT SUM(salary) FROM employees");
+    const projects = await pool.query("SELECT SUM(projects) FROM employees");
+
+    res.json({
+      totalEmployees: parseInt(employees.rows[0].count),
+      totalSalary: parseInt(salary.rows[0].sum) || 0,
+      totalProjects: parseInt(projects.rows[0].sum) || 0,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "error" });
+  }
+});
+
+/* ================= SERVER ================= */
+
+app.listen(5000, () => {
+  console.log("Server running on port 5000 🚀");
+});
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7

@@ -15,8 +15,12 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+<<<<<<< HEAD
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.20.0",
     "react-router-dom": "^7.14.2"
+=======
+    "pg": "^8.20.0"
+>>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
   }
 }
