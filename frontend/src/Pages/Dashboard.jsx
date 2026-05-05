@@ -1,15 +1,35 @@
-import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
 
-const Dashboard = () => {
+export default function Dashboard() {
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(true);
 
   const [employeesCount, setEmployeesCount] = useState(0);
   const [totalSalary, setTotalSalary] = useState(0);
   const [totalProjects, setTotalProjects] = useState(0);
 
   const fetchEmployees = async () => {
-    const res = await fetch("http://localhost:5000/employees");
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/");
+      return;
+    }
+
+    const res = await fetch("http://localhost:5000/employees", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (res.status === 401) {
+      localStorage.removeItem("token");
+      navigate("/");
+      return;
+    }
+
     const data = await res.json();
 
     setEmployeesCount(data.length);
@@ -33,54 +53,45 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <div className="w-64 bg-gray-900 text-white p-6 flex flex-col">
-        <h2 className="text-2xl font-bold mb-8">ERP</h2>
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="mb-3 text-left px-3 py-2 rounded bg-gray-700"
-        >
-          Dashboard
-        </button>
-
-        <button
-          onClick={() => navigate("/employees")}
-          className="mb-3 text-left px-3 py-2 rounded hover:bg-gray-700"
-        >
-          Employees
-        </button>
-
-        <button
-          onClick={() => navigate("/")}
-          className="mt-auto text-left px-3 py-2 rounded text-red-400 hover:bg-gray-700"
-        >
-          Logout
-        </button>
-      </div>
-
-      <div className="flex-1 p-8">
-        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-
-        <div className="grid grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="text-gray-500 mb-2">Total Employees</h3>
-            <p className="text-2xl font-bold">{employeesCount}</p>
+      <div
+        className={`flex-1 transition-all duration-300 ${
+          isOpen ? "ml-64" : "ml-0"
+        }`}
+      >
+        <div className="p-6 pt-20">
+          <div className="flex items-center gap-4 mb-6">
+            {!isOpen && (
+              <button
+                onClick={() => setIsOpen(true)}
+                className="bg-white p-2 rounded shadow"
+              >
+                ☰
+              </button>
+            )}
+            <h1 className="text-3xl font-bold">Dashboard</h1>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="text-gray-500 mb-2">Total Salary</h3>
-            <p className="text-2xl font-bold">{totalSalary}</p>
-          </div>
+          <div className="grid grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow">
+              <h3 className="text-gray-500 mb-2">Total Employees</h3>
+              <p className="text-2xl font-bold">{employeesCount}</p>
+            </div>
 
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="text-gray-500 mb-2">Total Projects</h3>
-            <p className="text-2xl font-bold">{totalProjects}</p>
+            <div className="bg-white p-6 rounded-xl shadow">
+              <h3 className="text-gray-500 mb-2">Total Salary</h3>
+              <p className="text-2xl font-bold">{totalSalary}</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow">
+              <h3 className="text-gray-500 mb-2">Total Projects</h3>
+              <p className="text-2xl font-bold">{totalProjects}</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const Auth = () => {
+export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -20,18 +20,17 @@ const Auth = () => {
 
     const res = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
     const data = await res.json();
 
-    if (data.success) {
+    if (data.success && data.token) {
+      localStorage.setItem("token", data.token);
       navigate("/dashboard");
     } else {
-      alert("Invalid credentials or user already exists");
+      alert(data.message || "Error");
     }
   };
 
@@ -84,6 +83,4 @@ const Auth = () => {
       </div>
     </div>
   );
-};
-
-export default Auth;
+}
