@@ -29,6 +29,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           Employees
         </button>
 
+        {/* ✅ NEW PROJECTS BUTTON */}
+        <button
+          onClick={() => navigate("/projects")}
+          className="mb-3 text-left px-3 py-2 rounded hover:bg-gray-700"
+        >
+          Projects
+        </button>
+
         <button
           onClick={() => navigate("/profile")}
           className="mt-auto text-left px-3 py-2 rounded hover:bg-gray-700"

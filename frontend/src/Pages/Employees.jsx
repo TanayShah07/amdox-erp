@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import toast from "react-hot-toast";
 
 export default function Employees() {
   const navigate = useNavigate();
@@ -14,9 +15,11 @@ export default function Employees() {
   const [projects, setProjects] = useState("");
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
+  const [editId, setEditId] = useState(null);
 
   const getToken = () => localStorage.getItem("token");
 
+  // 🔐 FETCH EMPLOYEES
   const fetchEmployees = async () => {
     const token = getToken();
 
@@ -48,6 +51,7 @@ export default function Employees() {
     setEmployees(Array.isArray(data) ? data : []);
   };
 
+  // 🔐 FETCH ROLES
   const fetchRoles = async () => {
     const token = getToken();
 
@@ -74,27 +78,66 @@ export default function Employees() {
     fetchRoles();
   }, []);
 
-  const addEmployee = async () => {
-    const token = getToken();
-
-    await fetch("http://localhost:5000/employees", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ name, role, salary, projects }),
-    });
-
-    setName("");
-    setRole("");
-    setSalary("");
-    setProjects("");
-
-    fetchEmployees();
-    fetchRoles();
+  // ✏️ EDIT
+  const editEmployee = (emp) => {
+    setName(emp.name);
+    setRole(emp.role);
+    setSalary(emp.salary);
+    setProjects(emp.projects);
+    setEditId(emp.id);
   };
 
+  // ➕ ADD / UPDATE
+  const addEmployee = async () => {
+    if (!name || !role || !salary || !projects) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    const token = getToken();
+
+    try {
+      if (editId) {
+        // UPDATE
+        await fetch(`http://localhost:5000/employees/${editId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name, role, salary, projects }),
+        });
+
+        toast.success("Employee Updated ✅");
+        setEditId(null);
+      } else {
+        // ADD
+        await fetch("http://localhost:5000/employees", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name, role, salary, projects }),
+        });
+
+        toast.success("Employee Added ✅");
+      }
+
+      setName("");
+      setRole("");
+      setSalary("");
+      setProjects("");
+
+      fetchEmployees();
+      fetchRoles();
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
+    }
+  };
+
+  // ❌ DELETE
   const deleteEmployee = async (id) => {
     const token = getToken();
 
@@ -104,6 +147,8 @@ export default function Employees() {
         Authorization: `Bearer ${token}`,
       },
     });
+
+    toast.success("Employee Deleted ✅");
 
     fetchEmployees();
     fetchRoles();
@@ -131,6 +176,7 @@ export default function Employees() {
             <h1 className="text-3xl font-bold">Employees</h1>
           </div>
 
+          {/* 🔍 SEARCH + FILTER */}
           <div className="flex gap-4 mb-6">
             <input
               className="border p-3 rounded-lg w-80"
@@ -153,6 +199,7 @@ export default function Employees() {
             </select>
           </div>
 
+          {/* ➕ FORM */}
           <div className="bg-white p-6 rounded-xl shadow mb-6">
             <div className="flex gap-4">
               <input
@@ -187,11 +234,12 @@ export default function Employees() {
                 onClick={addEmployee}
                 className="bg-blue-600 text-white px-6 rounded-lg"
               >
-                Add
+                {editId ? "Update" : "Add"}
               </button>
             </div>
           </div>
 
+          {/* 📋 TABLE */}
           <div className="bg-white rounded-xl shadow overflow-hidden">
             <table className="w-full">
               <thead className="bg-gray-200">
@@ -212,7 +260,13 @@ export default function Employees() {
                     <td className="p-4">{emp.salary}</td>
                     <td className="p-4">{emp.projects}</td>
                     <td className="p-4">
-                      <button className="text-blue-500 mr-3">Edit</button>
+                      <button
+                        onClick={() => editEmployee(emp)}
+                        className="text-blue-500 mr-3"
+                      >
+                        Edit
+                      </button>
+
                       <button
                         onClick={() => deleteEmployee(emp.id)}
                         className="text-red-500"
