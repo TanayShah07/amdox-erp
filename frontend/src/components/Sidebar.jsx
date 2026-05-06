@@ -3,6 +3,11 @@ import { useNavigate } from "react-router-dom";
 export default function Sidebar({ isOpen, setIsOpen }) {
   const navigate = useNavigate();
 
+  const logout = () => {
+    localStorage.removeItem("token"); // remove token
+    navigate("/"); // go to login
+  };
+
   return (
     <>
       <div
@@ -29,7 +34,6 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           Employees
         </button>
 
-        {/* ✅ NEW PROJECTS BUTTON */}
         <button
           onClick={() => navigate("/projects")}
           className="mb-3 text-left px-3 py-2 rounded hover:bg-gray-700"
@@ -37,12 +41,23 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           Projects
         </button>
 
-        <button
-          onClick={() => navigate("/profile")}
-          className="mt-auto text-left px-3 py-2 rounded hover:bg-gray-700"
-        >
-          Settings
-        </button>
+        {/* Bottom Section */}
+        <div className="mt-auto">
+          <button
+            onClick={() => navigate("/profile")}
+            className="w-full text-left px-3 py-2 rounded hover:bg-gray-700"
+          >
+            Settings
+          </button>
+
+          {/* ✅ LOGOUT BUTTON */}
+          <button
+            onClick={logout}
+            className="w-full text-left px-3 py-2 rounded hover:bg-red-600 text-red-400 hover:text-white mt-2"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       {isOpen && (
