@@ -7,12 +7,9 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "./db.js";
 
-<<<<<<< HEAD
-=======
-dotenv.config();
-
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
 const app = express();
+
+const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
 
 app.use(
   cors({
@@ -23,30 +20,28 @@ app.use(
 
 app.use(express.json());
 
-<<<<<<< HEAD
-const authMiddleware = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
+/* ================= AUTH MIDDLEWARE ================= */
 
-  if (!token) {
-    return res.status(401).json({ success: false });
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({ message: "No token provided" });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     next();
   } catch {
-    res.status(401).json({ success: false });
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
 
-=======
-const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
-
 /* ================= AUTH ================= */
 
-// ✅ SIGNUP
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
+// SIGNUP
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -61,7 +56,7 @@ app.post("/signup", async (req, res) => {
     );
 
     if (user.rows.length > 0) {
-      return res.json({ success: false });
+      return res.json({ success: false, message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -72,18 +67,13 @@ app.post("/signup", async (req, res) => {
     );
 
     res.json({ success: true });
-<<<<<<< HEAD
-  } catch {
-    res.status(500).json({ success: false });
-=======
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
   }
 });
 
-// ✅ LOGIN (SECURE)
+// LOGIN
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -98,11 +88,7 @@ app.post("/login", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-<<<<<<< HEAD
-      return res.json({ success: false });
-=======
       return res.json({ success: false, message: "Invalid credentials" });
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
     }
 
     const user = result.rows[0];
@@ -110,32 +96,23 @@ app.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-<<<<<<< HEAD
-      return res.json({ success: false });
-    }
-
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET,
-=======
       return res.json({ success: false, message: "Invalid credentials" });
     }
 
-    // 🔐 CREATE TOKEN
     const token = jwt.sign(
       { id: user.id, email: user.email },
       JWT_SECRET,
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
       { expiresIn: "1h" }
     );
 
     res.json({ success: true, token });
-<<<<<<< HEAD
-  } catch {
-    res.status(500).json({ success: false });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
+// PROFILE
 app.get("/profile", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
@@ -153,6 +130,7 @@ app.get("/profile", authMiddleware, async (req, res) => {
   }
 });
 
+// CHANGE PASSWORD
 app.post("/change-password", authMiddleware, async (req, res) => {
   const { password, newPassword } = req.body;
 
@@ -183,41 +161,9 @@ app.post("/change-password", authMiddleware, async (req, res) => {
   }
 });
 
-=======
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-/* ================= MIDDLEWARE ================= */
-
-// 🔐 AUTH MIDDLEWARE (FIXED)
-const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  try {
-    // ✅ EXPECT: "Bearer TOKEN"
-    const token = authHeader.split(" ")[1];
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-
-    next();
-  } catch (err) {
-    return res.status(401).json({ message: "Invalid token" });
-  }
-};
-
 /* ================= EMPLOYEES ================= */
 
 // GET employees
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
 app.get("/employees", authMiddleware, async (req, res) => {
   const { search, role } = req.query;
 
@@ -237,19 +183,12 @@ app.get("/employees", authMiddleware, async (req, res) => {
 
     const result = await pool.query(query, values);
     res.json(result.rows);
-<<<<<<< HEAD
   } catch {
-=======
-  } catch (err) {
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
     res.status(500).json({ error: "error" });
   }
 });
 
-<<<<<<< HEAD
-=======
 // ADD employee
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
 app.post("/employees", authMiddleware, async (req, res) => {
   const { name, role, salary, projects } = req.body;
 
@@ -265,13 +204,8 @@ app.post("/employees", authMiddleware, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-app.put("/employees/:id", authMiddleware, async (req, res) => {
-  const id = req.params.id;
-=======
 // UPDATE employee
 app.put("/employees/:id", authMiddleware, async (req, res) => {
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
   const { name, role, salary, projects } = req.body;
   const id = req.params.id;
 
@@ -287,10 +221,7 @@ app.put("/employees/:id", authMiddleware, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // DELETE employee
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
 app.delete("/employees/:id", authMiddleware, async (req, res) => {
   const id = req.params.id;
 
@@ -302,9 +233,6 @@ app.delete("/employees/:id", authMiddleware, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-app.listen(5000, () => console.log("Server running on 5000"));
-=======
 /* ================= DASHBOARD ================= */
 
 app.get("/dashboard", authMiddleware, async (req, res) => {
@@ -318,7 +246,7 @@ app.get("/dashboard", authMiddleware, async (req, res) => {
       totalSalary: parseInt(salary.rows[0].sum) || 0,
       totalProjects: parseInt(projects.rows[0].sum) || 0,
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "error" });
   }
 });
@@ -328,4 +256,3 @@ app.get("/dashboard", authMiddleware, async (req, res) => {
 app.listen(5000, () => {
   console.log("Server running on port 5000 🚀");
 });
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
