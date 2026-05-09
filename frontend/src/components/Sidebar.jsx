@@ -1,12 +1,21 @@
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
-export default function Sidebar({ isOpen, setIsOpen }) {
+export default function Sidebar({ isOpen, setIsOpen }) 
+{
   const navigate = useNavigate();
 
-  const logout = () => {
-    localStorage.removeItem("token"); // remove token
-    navigate("/"); // go to login
-  };
+  const logout = () => 
+    {
+  localStorage.removeItem("token");
+
+  toast.success("Logged out successfully 👋");
+
+  setTimeout(() => 
+    {
+    navigate("/");
+  }, 1000);
+};
 
   return (
     <>
