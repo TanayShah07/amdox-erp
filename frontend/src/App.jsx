@@ -5,6 +5,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
 import Profile from "./pages/Profile";
+import Projects from "./pages/Projects";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -15,6 +16,7 @@ function App() {
   return (
     <BrowserRouter>
       {/* ✅ TOAST NOTIFICATIONS */}
+      {/* ✅ TOAST */}
       <Toaster position="top-right" reverseOrder={false} />
 
       <Routes>
@@ -46,6 +48,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/projects"
+          element={
+            <ProtectedRoute>
+              <Projects />
+            </ProtectedRoute>
+          }
+        />
+>>>>>>> 5140917ca530d3f14448efdecd5bde67f658efb5
       </Routes>
     </BrowserRouter>
   );

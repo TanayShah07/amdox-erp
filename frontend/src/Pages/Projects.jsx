@@ -1,0 +1,320 @@
+import { useState, useEffect } from "react";
+import Sidebar from "../components/Sidebar";
+import toast from "react-hot-toast";
+
+const Projects = () => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  const [name, setName] = useState("");
+  const [status, setStatus] = useState("");
+  const [budget, setBudget] = useState("");
+  const [projects, setProjects] = useState([]);
+  const [editId, setEditId] = useState(null);
+
+  const token = localStorage.getItem("token");
+
+  // 🔐 FETCH PROJECTS
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/projects", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        localStorage.removeItem("token");
+        window.location.href = "/";
+        return;
+      }
+
+      const data = await res.json();
+      setProjects(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch projects");
+    }
+  };
+
+  // ➕ ADD / UPDATE PROJECT
+  const addOrUpdate = async () => {
+    if (!name || !status || !budget) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    const body = {
+      name,
+      status,
+      budget: Number(budget),
+    };
+
+    try {
+      if (editId) {
+        // ✏️ UPDATE
+        await fetch(`http://localhost:5000/projects/${editId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        });
+
+        toast.success("Project Updated ✅");
+        setEditId(null);
+      } else {
+        // ➕ ADD
+        await fetch("http://localhost:5000/projects", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        });
+
+        toast.success("Project Added ✅");
+      }
+
+      // CLEAR FORM
+      setName("");
+      setStatus("");
+      setBudget("");
+
+      fetchProjects();
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
+    }
+  };
+
+  // ❌ DELETE
+  const deleteProject = async (id) => {
+    try {
+      await fetch(`http://localhost:5000/projects/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      toast.success("Project Deleted ❌");
+      fetchProjects();
+    } catch (err) {
+      console.error(err);
+      toast.error("Delete failed");
+    }
+  };
+
+  // ✏️ EDIT
+  const editProject = (p) => {
+    setName(p.name);
+    setStatus(p.status);
+    setBudget(p.budget);
+    setEditId(p.id);
+  };
+
+  // 🎨 STATUS COLORS
+  const getStatusColor = (status) => {
+    if (status.toLowerCase() === "completed") {
+      return "bg-green-100 text-green-700";
+    }
+
+    if (status.toLowerCase() === "pending") {
+      return "bg-yellow-100 text-yellow-700";
+    }
+
+    return "bg-blue-100 text-blue-700";
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+
+      {/* ✅ SIDEBAR */}
+      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+
+      {/* ✅ CONTENT */}
+      <div
+        className={`flex-1 transition-all duration-300 ${
+          isOpen ? "ml-64" : "ml-0"
+        }`}
+      >
+        <div className="p-6 pt-20">
+
+          {/* 🔝 HEADER */}
+          <div className="flex items-center gap-4 mb-6">
+            {!isOpen && (
+              <button
+                onClick={() => setIsOpen(true)}
+                className="bg-white p-2 rounded shadow"
+              >
+                ☰
+              </button>
+            )}
+
+            <div>
+              <h1 className="text-3xl font-bold">Projects</h1>
+              <p className="text-gray-500">
+                Manage company projects easily
+              </p>
+            </div>
+          </div>
+
+          {/* 📊 CARD */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-white p-6 rounded-2xl shadow">
+              <p className="text-gray-500">Total Projects</p>
+              <h2 className="text-3xl font-bold mt-2">
+                {projects.length}
+              </h2>
+            </div>
+          </div>
+
+          {/* ➕ FORM */}
+          <div className="bg-white p-6 rounded-2xl shadow mb-6">
+            <h2 className="text-xl font-semibold mb-4">
+              {editId ? "Update Project" : "Add New Project"}
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              <input
+                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Project Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+
+              <select
+                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="">Select Status</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+
+              <input
+                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Budget"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+              />
+
+            </div>
+
+            <div className="flex gap-3 mt-4">
+
+              <button
+                onClick={addOrUpdate}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+              >
+                {editId ? "Update Project" : "Add Project"}
+              </button>
+
+              {editId && (
+                <button
+                  onClick={() => {
+                    setEditId(null);
+                    setName("");
+                    setStatus("");
+                    setBudget("");
+                  }}
+                  className="bg-gray-300 hover:bg-gray-400 px-6 py-2 rounded-lg"
+                >
+                  Cancel
+                </button>
+              )}
+
+            </div>
+          </div>
+
+          {/* 📋 TABLE */}
+          <div className="bg-white rounded-2xl shadow overflow-hidden">
+
+            <div className="p-5 border-b">
+              <h2 className="text-xl font-semibold">
+                Projects List
+              </h2>
+            </div>
+
+            {projects.length === 0 ? (
+              <div className="p-10 text-center text-gray-500">
+                No Projects Added
+              </div>
+            ) : (
+              <table className="w-full text-left">
+
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="p-4">Project</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4">Budget</th>
+                    <th className="p-4">Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {projects.map((p) => (
+                    <tr
+                      key={p.id}
+                      className="border-t hover:bg-gray-50 transition"
+                    >
+                      <td className="p-4 font-medium">
+                        {p.name}
+                      </td>
+
+                      <td className="p-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                            p.status
+                          )}`}
+                        >
+                          {p.status}
+                        </span>
+                      </td>
+
+                      <td className="p-4 font-semibold">
+                        ₹ {p.budget}
+                      </td>
+
+                      <td className="p-4">
+
+                        <button
+                          onClick={() => editProject(p)}
+                          className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mr-3 hover:bg-blue-200"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={() => deleteProject(p.id)}
+                          className="bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200"
+                        >
+                          Delete
+                        </button>
+
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+
+              </table>
+            )}
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Projects;

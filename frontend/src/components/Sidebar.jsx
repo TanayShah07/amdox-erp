@@ -1,7 +1,21 @@
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
-export default function Sidebar({ isOpen, setIsOpen }) {
+export default function Sidebar({ isOpen, setIsOpen }) 
+{
   const navigate = useNavigate();
+
+  const logout = () => 
+    {
+  localStorage.removeItem("token");
+
+  toast.success("Logged out successfully 👋");
+
+  setTimeout(() => 
+    {
+    navigate("/");
+  }, 1000);
+};
 
   return (
     <>
@@ -30,11 +44,29 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         </button>
 
         <button
-          onClick={() => navigate("/profile")}
-          className="mt-auto text-left px-3 py-2 rounded hover:bg-gray-700"
+          onClick={() => navigate("/projects")}
+          className="mb-3 text-left px-3 py-2 rounded hover:bg-gray-700"
         >
-          Settings
+          Projects
         </button>
+
+        {/* Bottom Section */}
+        <div className="mt-auto">
+          <button
+            onClick={() => navigate("/profile")}
+            className="w-full text-left px-3 py-2 rounded hover:bg-gray-700"
+          >
+            Settings
+          </button>
+
+          {/* ✅ LOGOUT BUTTON */}
+          <button
+            onClick={logout}
+            className="w-full text-left px-3 py-2 rounded hover:bg-red-600 text-red-400 hover:text-white mt-2"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       {isOpen && (

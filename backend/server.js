@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken";
 import pool from "./db.js";
 
 const app = express();
+const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
 
 const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
 
@@ -36,6 +37,17 @@ const authMiddleware = (req, res, next) => {
     next();
   } catch {
     return res.status(401).json({ message: "Invalid token" });
+    return res.status(401).json({ success: false, message: "No token" });
+  }
+
+  try {
+    const token = authHeader.split(" ")[1]; // ✅ FIXED
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    req.user = decoded;
+    next();
+  } catch {
+    return res.status(401).json({ success: false, message: "Invalid token" });
   }
 };
 
@@ -70,6 +82,8 @@ app.post("/signup", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
+  } catch {
+    res.status(500).json({ success: false });
   }
 });
 
@@ -88,7 +102,10 @@ app.post("/login", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+
       return res.json({ success: false, message: "Invalid credentials" });
+
+      return res.json({ success: false, message: "User not found" });
     }
 
     const user = result.rows[0];
@@ -96,7 +113,9 @@ app.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
+
       return res.json({ success: false, message: "Invalid credentials" });
+      return res.json({ success: false, message: "Invalid credentials" }); // ✅ FIXED
     }
 
     const token = jwt.sign(
@@ -113,16 +132,20 @@ app.post("/login", async (req, res) => {
 });
 
 // PROFILE
+  } catch {
+    res.status(500).json({ success: false });
+  }
+});
+
+/* ================= PROFILE ================= */
+
+>>>>>>> 5140917ca530d3f14448efdecd5bde67f658efb5
 app.get("/profile", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT id, name, email FROM users WHERE id = $1",
       [req.user.id]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false });
-    }
 
     res.json(result.rows[0]);
   } catch {
@@ -145,13 +168,13 @@ app.post("/change-password", authMiddleware, async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.json({ success: false });
+      return res.json({ success: false, message: "Wrong password" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     await pool.query(
-      "UPDATE users SET password = $1 WHERE id = $2",
+      "UPDATE users SET password=$1 WHERE id=$2",
       [hashedPassword, req.user.id]
     );
 
@@ -194,7 +217,7 @@ app.post("/employees", authMiddleware, async (req, res) => {
 
   try {
     await pool.query(
-      "INSERT INTO employees (name, role, salary, projects) VALUES ($1, $2, $3, $4)",
+      "INSERT INTO employees (name, role, salary, projects) VALUES ($1,$2,$3,$4)",
       [name, role, salary, projects]
     );
 
@@ -233,18 +256,72 @@ app.delete("/employees/:id", authMiddleware, async (req, res) => {
   }
 });
 
+/* ================= PROJECTS ================= */
+
+app.get("/projects", authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM projects ORDER BY id DESC");
+    res.json(result.rows);
+  } catch {
+    res.status(500).json({ success: false });
+  }
+});
+
+app.post("/projects", authMiddleware, async (req, res) => {
+  const { name, status, budget } = req.body;
+
+  try {
+    await pool.query(
+      "INSERT INTO projects (name, status, budget) VALUES ($1,$2,$3)",
+      [name, status, budget]
+    );
+
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ success: false });
+  }
+});
+
+app.put("/projects/:id", authMiddleware, async (req, res) => {
+  const { name, status, budget } = req.body;
+  const id = req.params.id;
+
+  try {
+    await pool.query(
+      "UPDATE projects SET name=$1, status=$2, budget=$3 WHERE id=$4",
+      [name, status, budget, id]
+    );
+
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ success: false });
+  }
+});
+
+app.delete("/projects/:id", authMiddleware, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    await pool.query("DELETE FROM projects WHERE id=$1", [id]);
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ success: false });
+  }
+});
+
+>>>>>>> 5140917ca530d3f14448efdecd5bde67f658efb5
 /* ================= DASHBOARD ================= */
 
 app.get("/dashboard", authMiddleware, async (req, res) => {
   try {
     const employees = await pool.query("SELECT COUNT(*) FROM employees");
     const salary = await pool.query("SELECT SUM(salary) FROM employees");
-    const projects = await pool.query("SELECT SUM(projects) FROM employees");
+    const projects = await pool.query("SELECT COUNT(*) FROM projects");
 
     res.json({
       totalEmployees: parseInt(employees.rows[0].count),
       totalSalary: parseInt(salary.rows[0].sum) || 0,
-      totalProjects: parseInt(projects.rows[0].sum) || 0,
+      totalProjects: parseInt(projects.rows[0].count), // ✅ FIXED
     });
   } catch {
     res.status(500).json({ error: "error" });

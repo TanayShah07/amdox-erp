@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast"; // ✅ NEW
+import toast from "react-hot-toast";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,13 +24,11 @@ export default function Auth() {
       ? { email, password }
       : { name, email, password };
 
-<<<<<<< HEAD
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-=======
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -39,18 +37,16 @@ export default function Auth() {
         },
         body: JSON.stringify(body),
       });
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
+
 
       const data = await res.json();
       console.log("RESPONSE:", data);
 
-<<<<<<< HEAD
     if (data.success && data.token) {
       localStorage.setItem("token", data.token);
       navigate("/dashboard");
     } else {
       alert(data.message || "Error");
-=======
       if (data.success) {
         if (data.token) {
           localStorage.setItem("token", data.token);
@@ -67,7 +63,7 @@ export default function Auth() {
     } catch (err) {
       console.error(err);
       toast.error("Server error. Try again.");
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
+
     }
 
     setLoading(false);
@@ -84,7 +80,6 @@ export default function Auth() {
           {isLogin ? "Login" : "Sign Up"}
         </h2>
 
-        {/* NAME (only signup) */}
         {!isLogin && (
           <input
             type="text"
@@ -96,7 +91,6 @@ export default function Auth() {
           />
         )}
 
-        {/* EMAIL */}
         <input
           type="email"
           required
@@ -107,7 +101,6 @@ export default function Auth() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        {/* PASSWORD */}
         <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
@@ -126,7 +119,6 @@ export default function Auth() {
           </span>
         </div>
 
-        {/* BUTTON */}
         <button
           type="submit"
           disabled={loading}
@@ -139,7 +131,6 @@ export default function Auth() {
             : "Sign Up"}
         </button>
 
-        {/* SWITCH */}
         <p
           className="text-sm text-center mt-4 cursor-pointer text-blue-600 hover:underline"
           onClick={() => setIsLogin(!isLogin)}

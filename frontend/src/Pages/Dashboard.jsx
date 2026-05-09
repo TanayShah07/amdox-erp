@@ -10,7 +10,7 @@ export default function Dashboard() {
   const [totalSalary, setTotalSalary] = useState(0);
   const [totalProjects, setTotalProjects] = useState(0);
 
-<<<<<<< HEAD
+
   const fetchEmployees = async () => {
     const token = localStorage.getItem("token");
 
@@ -32,11 +32,9 @@ export default function Dashboard() {
     }
 
     const data = await res.json();
-=======
   const token = localStorage.getItem("token");
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
+  const token = localStorage.getItem("token");
 
-  // 🔐 FETCH DASHBOARD
   const fetchDashboard = async () => {
     if (!token) {
       navigate("/");
@@ -50,7 +48,6 @@ export default function Dashboard() {
         },
       });
 
-      // ❗ VERY IMPORTANT (handle unauthorized)
       if (!res.ok) {
         console.log("Unauthorized - redirecting");
         localStorage.removeItem("token");
@@ -75,7 +72,6 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // 🚪 LOGOUT
   const logout = () => {
     localStorage.removeItem("token");
     navigate("/");
@@ -85,7 +81,7 @@ export default function Dashboard() {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
-<<<<<<< HEAD
+
       <div
         className={`flex-1 transition-all duration-300 ${
           isOpen ? "ml-64" : "ml-0"
@@ -119,7 +115,6 @@ export default function Dashboard() {
               <h3 className="text-gray-500 mb-2">Total Projects</h3>
               <p className="text-2xl font-bold">{totalProjects}</p>
             </div>
-=======
         <button className="mb-3 text-left px-3 py-2 rounded bg-gray-700">
           Dashboard
         </button>
@@ -156,7 +151,6 @@ export default function Dashboard() {
           <div className="bg-white p-6 rounded-xl shadow">
             <h3>Total Projects</h3>
             <p className="text-2xl font-bold">{totalProjects}</p>
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
           </div>
         </div>
       </div>
