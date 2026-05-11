@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+export default function Employees() {
+  const navigate = useNavigate();
+
+  const [employees, setEmployees] = useState([]);
 import Sidebar from "../components/Sidebar";
 import toast from "react-hot-toast";
 
@@ -18,6 +23,8 @@ export default function Employees() {
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
+  const [editId, setEditId] = useState(null);
+
 
   const [editId, setEditId] = useState(null);
 
@@ -47,6 +54,7 @@ export default function Employees() {
         }
       );
 
+      if (!res.ok) {
       if (res.status === 401) {
         localStorage.removeItem("token");
         navigate("/");
@@ -67,6 +75,7 @@ export default function Employees() {
     const token = getToken();
 
     try {
+      if (editId) {
       const res = await fetch("http://localhost:5000/employees", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -130,6 +139,10 @@ export default function Employees() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+          body: JSON.stringify(body),
+        });
+        setEditId(null);
+      } else {
           body: JSON.stringify({
             name,
             role,
@@ -148,6 +161,10 @@ export default function Employees() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+          body: JSON.stringify(body),
+        });
+      }
+
           body: JSON.stringify({
             name,
             role,
@@ -166,6 +183,8 @@ export default function Employees() {
       setProjects("");
 
       fetchEmployees();
+    } catch (err) {
+      console.error(err);
       fetchRoles();
 
     } catch (err) {
@@ -203,6 +222,10 @@ export default function Employees() {
       return "bg-purple-100 text-purple-700";
     }
 
+  // 🔐 LOAD
+  useEffect(() => {
+    fetchEmployees();
+  }, [search, filterRole]);
     if (role.toLowerCase().includes("developer")) {
       return "bg-blue-100 text-blue-700";
     }
@@ -250,6 +273,91 @@ export default function Employees() {
               </p>
             </div>
 
+        {/* FORM */}
+        <div className="bg-white p-6 rounded-xl shadow mb-6">
+          <div className="grid grid-cols-4 gap-3">
+            <input
+              className="p-3 border rounded-lg"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+
+            <input
+              className="p-3 border rounded-lg"
+              placeholder="Role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            />
+
+            <input
+              className="p-3 border rounded-lg"
+              placeholder="Salary"
+              value={salary}
+              onChange={(e) => setSalary(e.target.value)}
+            />
+
+            <input
+              className="p-3 border rounded-lg"
+              placeholder="Projects"
+              value={projects}
+              onChange={(e) => setProjects(e.target.value)}
+            />
+          </div>
+
+          <button
+            onClick={addOrUpdateEmployee}
+            className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg"
+          >
+            {editId ? "Update" : "Add"}
+          </button>
+        </div>
+
+        {/* TABLE */}
+        <div className="bg-white rounded-xl shadow overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-gray-200">
+              <tr>
+                <th className="p-4">Name</th>
+                <th className="p-4">Role</th>
+                <th className="p-4">Salary</th>
+                <th className="p-4">Projects</th>
+                <th className="p-4">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {employees.map((emp) => (
+                <tr key={emp.id} className="border-t">
+                  <td className="p-4">{emp.name}</td>
+                  <td className="p-4">{emp.role}</td>
+                  <td className="p-4">{emp.salary}</td>
+                  <td className="p-4">{emp.projects}</td>
+                  <td className="p-4">
+                    <button
+                      onClick={() => editEmployee(emp)}
+                      className="text-blue-600 mr-4"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => deleteEmployee(emp.id)}
+                      className="text-red-500"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {employees.length === 0 && (
+            <p className="text-center p-4 text-gray-500">
+              No employees found
+            </p>
+          )}
           </div>
 
           {/* 📊 STATS */}

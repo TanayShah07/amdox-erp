@@ -24,6 +24,11 @@ export default function Auth() {
       ? { email, password }
       : { name, email, password };
 
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -33,9 +38,15 @@ export default function Auth() {
         body: JSON.stringify(body),
       });
 
+
       const data = await res.json();
       console.log("RESPONSE:", data);
 
+    if (data.success && data.token) {
+      localStorage.setItem("token", data.token);
+      navigate("/dashboard");
+    } else {
+      alert(data.message || "Error");
       if (data.success) {
         if (data.token) {
           localStorage.setItem("token", data.token);
@@ -52,6 +63,7 @@ export default function Auth() {
     } catch (err) {
       console.error(err);
       toast.error("Server error. Try again.");
+
     }
 
     setLoading(false);

@@ -15,6 +15,7 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <BrowserRouter>
+      {/* ✅ TOAST NOTIFICATIONS */}
       {/* ✅ TOAST */}
       <Toaster position="top-right" reverseOrder={false} />
 
@@ -56,6 +57,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+>>>>>>> 5140917ca530d3f14448efdecd5bde67f658efb5
       </Routes>
     </BrowserRouter>
   );

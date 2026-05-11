@@ -12,11 +12,15 @@ const app = express();
 
 const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
 
+<<<<<<< HEAD
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const model = genAI.getGenerativeModel({
   model: "gemini-2.0-flash",
 });
+=======
+const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
+>>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
 
 app.use(
   cors({
@@ -31,10 +35,24 @@ const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
+<<<<<<< HEAD
     return res.status(401).json({
       success: false,
       message: "No token",
     });
+=======
+    return res.status(401).json({ message: "No token provided" });
+  }
+
+  try {
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch {
+    return res.status(401).json({ message: "Invalid token" });
+    return res.status(401).json({ success: false, message: "No token" });
+>>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
   }
 
   try {
@@ -83,6 +101,7 @@ app.post("/signup", async (req, res) => {
       [name, email, hashedPassword]
     );
 
+<<<<<<< HEAD
     res.json({
       success: true,
       message: "Signup successful",
@@ -94,6 +113,14 @@ app.post("/signup", async (req, res) => {
       success: false,
       message: "Server error",
     });
+=======
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  } catch {
+    res.status(500).json({ success: false });
+>>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
   }
 });
 
@@ -114,10 +141,17 @@ app.post("/login", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+<<<<<<< HEAD
       return res.json({
         success: false,
         message: "User not found",
       });
+=======
+
+      return res.json({ success: false, message: "Invalid credentials" });
+
+      return res.json({ success: false, message: "User not found" });
+>>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
     }
 
     const user = result.rows[0];
@@ -125,10 +159,16 @@ app.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
+<<<<<<< HEAD
       return res.json({
         success: false,
         message: "Invalid credentials",
       });
+=======
+
+      return res.json({ success: false, message: "Invalid credentials" });
+      return res.json({ success: false, message: "Invalid credentials" }); // ✅ FIXED
+>>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
     }
 
     const token = jwt.sign(
@@ -142,6 +182,7 @@ app.post("/login", async (req, res) => {
       }
     );
 
+<<<<<<< HEAD
     res.json({
       success: true,
       token,
@@ -156,6 +197,24 @@ app.post("/login", async (req, res) => {
   }
 });
 
+=======
+    res.json({ success: true, token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// PROFILE
+  } catch {
+    res.status(500).json({ success: false });
+  }
+});
+
+/* ================= PROFILE ================= */
+
+>>>>>>> 5140917ca530d3f14448efdecd5bde67f658efb5
+>>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
 app.get("/profile", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
@@ -181,6 +240,7 @@ app.get("/profile", authMiddleware, async (req, res) => {
   }
 });
 
+// CHANGE PASSWORD
 app.post("/change-password", authMiddleware, async (req, res) => {
   const { password, newPassword } = req.body;
 
@@ -236,6 +296,12 @@ app.post("/change-password", authMiddleware, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
+=======
+/* ================= EMPLOYEES ================= */
+
+// GET employees
+>>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
 app.get("/employees", authMiddleware, async (req, res) => {
   const { search, role } = req.query;
 
@@ -266,6 +332,7 @@ app.get("/employees", authMiddleware, async (req, res) => {
   }
 });
 
+// ADD employee
 app.post("/employees", authMiddleware, async (req, res) => {
   const { name, role, salary, projects } = req.body;
 
@@ -289,6 +356,7 @@ app.post("/employees", authMiddleware, async (req, res) => {
   }
 });
 
+// UPDATE employee
 app.put("/employees/:id", authMiddleware, async (req, res) => {
   const { name, role, salary, projects } = req.body;
 
@@ -314,6 +382,7 @@ app.put("/employees/:id", authMiddleware, async (req, res) => {
   }
 });
 
+// DELETE employee
 app.delete("/employees/:id", authMiddleware, async (req, res) => {
   const id = req.params.id;
 
@@ -425,6 +494,7 @@ app.delete("/projects/:id", authMiddleware, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 app.post("/chatbot", authMiddleware, async (req, res) => {
   try {
     const { message } = req.body;
@@ -488,6 +558,10 @@ app.post("/chatbot", authMiddleware, async (req, res) => {
     });
   }
 });
+=======
+>>>>>>> 5140917ca530d3f14448efdecd5bde67f658efb5
+/* ================= DASHBOARD ================= */
+>>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
 
 app.get("/dashboard", authMiddleware, async (req, res) => {
   try {
