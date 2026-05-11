@@ -5,36 +5,40 @@ import Chatbot from "../components/Chatbot";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+
   const [isOpen, setIsOpen] = useState(true);
 
   const [employeesCount, setEmployeesCount] = useState(0);
   const [totalSalary, setTotalSalary] = useState(0);
   const [totalProjects, setTotalProjects] = useState(0);
 
+  const token = localStorage.getItem("token");
 
   const fetchEmployees = async () => {
-    const token = localStorage.getItem("token");
-
     if (!token) {
       navigate("/");
       return;
     }
 
-    const res = await fetch("http://localhost:5000/employees", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      const res = await fetch("http://localhost:5000/employees", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    if (res.status === 401) {
-      localStorage.removeItem("token");
-      navigate("/");
-      return;
+      if (res.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/");
+        return;
+      }
+
+      const data = await res.json();
+      console.log(data);
+    } catch (err) {
+      console.error(err);
     }
-
-    const data = await res.json();
-  const token = localStorage.getItem("token");
-  const token = localStorage.getItem("token");
+  };
 
   const fetchDashboard = async () => {
     if (!token) {
@@ -68,8 +72,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboard();
+    fetchEmployees();
 
     const interval = setInterval(fetchDashboard, 5000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -81,7 +87,6 @@ export default function Dashboard() {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-
 
       <div
         className={`flex-1 transition-all duration-300 ${
@@ -98,64 +103,47 @@ export default function Dashboard() {
                 ☰
               </button>
             )}
+
             <h1 className="text-3xl font-bold">Dashboard</h1>
           </div>
 
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white p-6 rounded-xl shadow">
-              <h3 className="text-gray-500 mb-2">Total Employees</h3>
-              <p className="text-2xl font-bold">{employeesCount}</p>
+              <h3 className="text-gray-500 mb-2">
+                Total Employees
+              </h3>
+
+              <p className="text-2xl font-bold">
+                {employeesCount}
+              </p>
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow">
-              <h3 className="text-gray-500 mb-2">Total Salary</h3>
-              <p className="text-2xl font-bold">{totalSalary}</p>
+              <h3 className="text-gray-500 mb-2">
+                Total Salary
+              </h3>
+
+              <p className="text-2xl font-bold">
+                ₹ {totalSalary}
+              </p>
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow">
-              <h3 className="text-gray-500 mb-2">Total Projects</h3>
-              <p className="text-2xl font-bold">{totalProjects}</p>
+              <h3 className="text-gray-500 mb-2">
+                Total Projects
+              </h3>
+
+              <p className="text-2xl font-bold">
+                {totalProjects}
+              </p>
             </div>
-        <button className="mb-3 text-left px-3 py-2 rounded bg-gray-700">
-          Dashboard
-        </button>
-
-        <button
-          onClick={() => navigate("/employees")}
-          className="mb-3 text-left px-3 py-2 rounded hover:bg-gray-700"
-        >
-          Employees
-        </button>
-
-        <button
-          onClick={logout}
-          className="mt-auto text-left px-3 py-2 rounded text-red-400 hover:bg-gray-700"
-        >
-          Logout
-        </button>
-      </div>
-
-      <div className="flex-1 p-8">
-        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-
-        <div className="grid grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3>Total Employees</h3>
-            <p className="text-2xl font-bold">{employeesCount}</p>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3>Total Salary</h3>
-            <p className="text-2xl font-bold">{totalSalary}</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3>Total Projects</h3>
-            <p className="text-2xl font-bold">{totalProjects}</p>
+          <div className="mt-8">
+            <Chatbot />
           </div>
         </div>
       </div>
-          <Chatbot />
     </div>
   );
 }

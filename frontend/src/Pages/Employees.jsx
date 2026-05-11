@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-export default function Employees() {
-  const navigate = useNavigate();
-
-  const [employees, setEmployees] = useState([]);
 import Sidebar from "../components/Sidebar";
 import toast from "react-hot-toast";
 
@@ -23,9 +18,6 @@ export default function Employees() {
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
-  const [editId, setEditId] = useState(null);
-
-
   const [editId, setEditId] = useState(null);
 
   const getToken = () => localStorage.getItem("token");
@@ -55,10 +47,11 @@ export default function Employees() {
       );
 
       if (!res.ok) {
-      if (res.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/");
-        return;
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/");
+          return;
+        }
       }
 
       const data = await res.json();
@@ -75,7 +68,6 @@ export default function Employees() {
     const token = getToken();
 
     try {
-      if (editId) {
       const res = await fetch("http://localhost:5000/employees", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -130,6 +122,13 @@ export default function Employees() {
 
     const token = getToken();
 
+    const body = {
+      name,
+      role,
+      salary,
+      projects,
+    };
+
     try {
       if (editId) {
         // ✏️ UPDATE
@@ -140,15 +139,6 @@ export default function Employees() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(body),
-        });
-        setEditId(null);
-      } else {
-          body: JSON.stringify({
-            name,
-            role,
-            salary,
-            projects,
-          }),
         });
 
         toast.success("Employee Updated ✅");
@@ -163,15 +153,6 @@ export default function Employees() {
           },
           body: JSON.stringify(body),
         });
-      }
-
-          body: JSON.stringify({
-            name,
-            role,
-            salary,
-            projects,
-          }),
-        });
 
         toast.success("Employee Added ✅");
       }
@@ -183,10 +164,7 @@ export default function Employees() {
       setProjects("");
 
       fetchEmployees();
-    } catch (err) {
-      console.error(err);
       fetchRoles();
-
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong");
@@ -209,7 +187,6 @@ export default function Employees() {
 
       fetchEmployees();
       fetchRoles();
-
     } catch (err) {
       console.error(err);
       toast.error("Delete failed");
@@ -222,10 +199,6 @@ export default function Employees() {
       return "bg-purple-100 text-purple-700";
     }
 
-  // 🔐 LOAD
-  useEffect(() => {
-    fetchEmployees();
-  }, [search, filterRole]);
     if (role.toLowerCase().includes("developer")) {
       return "bg-blue-100 text-blue-700";
     }
@@ -239,7 +212,6 @@ export default function Employees() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-
       {/* ✅ SIDEBAR */}
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
@@ -250,10 +222,8 @@ export default function Employees() {
         }`}
       >
         <div className="p-6 pt-20">
-
           {/* 🔝 HEADER */}
           <div className="flex items-center gap-4 mb-6">
-
             {!isOpen && (
               <button
                 onClick={() => setIsOpen(true)}
@@ -272,99 +242,13 @@ export default function Employees() {
                 Manage employees and roles
               </p>
             </div>
-
-        {/* FORM */}
-        <div className="bg-white p-6 rounded-xl shadow mb-6">
-          <div className="grid grid-cols-4 gap-3">
-            <input
-              className="p-3 border rounded-lg"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-
-            <input
-              className="p-3 border rounded-lg"
-              placeholder="Role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            />
-
-            <input
-              className="p-3 border rounded-lg"
-              placeholder="Salary"
-              value={salary}
-              onChange={(e) => setSalary(e.target.value)}
-            />
-
-            <input
-              className="p-3 border rounded-lg"
-              placeholder="Projects"
-              value={projects}
-              onChange={(e) => setProjects(e.target.value)}
-            />
-          </div>
-
-          <button
-            onClick={addOrUpdateEmployee}
-            className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg"
-          >
-            {editId ? "Update" : "Add"}
-          </button>
-        </div>
-
-        {/* TABLE */}
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="p-4">Name</th>
-                <th className="p-4">Role</th>
-                <th className="p-4">Salary</th>
-                <th className="p-4">Projects</th>
-                <th className="p-4">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {employees.map((emp) => (
-                <tr key={emp.id} className="border-t">
-                  <td className="p-4">{emp.name}</td>
-                  <td className="p-4">{emp.role}</td>
-                  <td className="p-4">{emp.salary}</td>
-                  <td className="p-4">{emp.projects}</td>
-                  <td className="p-4">
-                    <button
-                      onClick={() => editEmployee(emp)}
-                      className="text-blue-600 mr-4"
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      onClick={() => deleteEmployee(emp.id)}
-                      className="text-red-500"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {employees.length === 0 && (
-            <p className="text-center p-4 text-gray-500">
-              No employees found
-            </p>
-          )}
           </div>
 
           {/* 📊 STATS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-
             <div className="bg-white p-6 rounded-2xl shadow">
               <p className="text-gray-500">Total Employees</p>
+
               <h2 className="text-3xl font-bold mt-2">
                 {employees.length}
               </h2>
@@ -372,6 +256,7 @@ export default function Employees() {
 
             <div className="bg-white p-6 rounded-2xl shadow">
               <p className="text-gray-500">Roles</p>
+
               <h2 className="text-3xl font-bold mt-2">
                 {roles.length}
               </h2>
@@ -379,6 +264,7 @@ export default function Employees() {
 
             <div className="bg-white p-6 rounded-2xl shadow">
               <p className="text-gray-500">Total Projects</p>
+
               <h2 className="text-3xl font-bold mt-2">
                 {employees.reduce(
                   (total, emp) =>
@@ -387,12 +273,10 @@ export default function Employees() {
                 )}
               </h2>
             </div>
-
           </div>
 
           {/* 🔍 SEARCH + FILTER */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-
             <input
               className="border p-3 rounded-xl w-full bg-white"
               placeholder="Search employees..."
@@ -413,12 +297,10 @@ export default function Employees() {
                 </option>
               ))}
             </select>
-
           </div>
 
           {/* ➕ FORM */}
           <div className="bg-white p-6 rounded-2xl shadow mb-6">
-
             <h2 className="text-xl font-semibold mb-4">
               {editId
                 ? "Update Employee"
@@ -426,7 +308,6 @@ export default function Employees() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
               <input
                 className="border p-3 rounded-xl"
                 placeholder="Employee Name"
@@ -454,11 +335,9 @@ export default function Employees() {
                 value={projects}
                 onChange={(e) => setProjects(e.target.value)}
               />
-
             </div>
 
             <div className="flex gap-3 mt-4">
-
               <button
                 onClick={addEmployee}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
@@ -480,14 +359,11 @@ export default function Employees() {
                   Cancel
                 </button>
               )}
-
             </div>
-
           </div>
 
           {/* 📋 TABLE */}
           <div className="bg-white rounded-2xl shadow overflow-hidden">
-
             <div className="p-5 border-b">
               <h2 className="text-xl font-semibold">
                 Employees List
@@ -500,7 +376,6 @@ export default function Employees() {
               </div>
             ) : (
               <table className="w-full text-left">
-
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="p-4">Name</th>
@@ -540,7 +415,6 @@ export default function Employees() {
                       </td>
 
                       <td className="p-4">
-
                         <button
                           onClick={() => editEmployee(emp)}
                           className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mr-3 hover:bg-blue-200"
@@ -554,17 +428,13 @@ export default function Employees() {
                         >
                           Delete
                         </button>
-
                       </td>
                     </tr>
                   ))}
                 </tbody>
-
               </table>
             )}
-
           </div>
-
         </div>
       </div>
     </div>

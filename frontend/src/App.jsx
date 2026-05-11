@@ -57,7 +57,7 @@ function App() {
             </ProtectedRoute>
           }
         />
->>>>>>> 5140917ca530d3f14448efdecd5bde67f658efb5
+
       </Routes>
     </BrowserRouter>
   );

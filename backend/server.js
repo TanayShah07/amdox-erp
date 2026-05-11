@@ -12,15 +12,13 @@ const app = express();
 
 const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
 
-<<<<<<< HEAD
+// ================= GEMINI SETUP =================
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash",
+  model: "gemini-2.5-flash",
 });
-=======
-const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
->>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
 
 app.use(
   cors({
@@ -31,28 +29,16 @@ app.use(
 
 app.use(express.json());
 
+// ================= AUTH MIDDLEWARE =================
+
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-<<<<<<< HEAD
     return res.status(401).json({
       success: false,
       message: "No token",
     });
-=======
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  try {
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch {
-    return res.status(401).json({ message: "Invalid token" });
-    return res.status(401).json({ success: false, message: "No token" });
->>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
   }
 
   try {
@@ -70,6 +56,8 @@ const authMiddleware = (req, res, next) => {
     });
   }
 };
+
+// ================= SIGNUP =================
 
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
@@ -101,28 +89,21 @@ app.post("/signup", async (req, res) => {
       [name, email, hashedPassword]
     );
 
-<<<<<<< HEAD
     res.json({
       success: true,
       message: "Signup successful",
     });
   } catch (err) {
-    console.log(err);
+    console.error(err);
 
     res.status(500).json({
       success: false,
       message: "Server error",
     });
-=======
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  } catch {
-    res.status(500).json({ success: false });
->>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
   }
 });
+
+// ================= LOGIN =================
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -141,17 +122,10 @@ app.post("/login", async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-<<<<<<< HEAD
       return res.json({
         success: false,
         message: "User not found",
       });
-=======
-
-      return res.json({ success: false, message: "Invalid credentials" });
-
-      return res.json({ success: false, message: "User not found" });
->>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
     }
 
     const user = result.rows[0];
@@ -159,16 +133,10 @@ app.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-<<<<<<< HEAD
       return res.json({
         success: false,
         message: "Invalid credentials",
       });
-=======
-
-      return res.json({ success: false, message: "Invalid credentials" });
-      return res.json({ success: false, message: "Invalid credentials" }); // ✅ FIXED
->>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
     }
 
     const token = jwt.sign(
@@ -182,13 +150,12 @@ app.post("/login", async (req, res) => {
       }
     );
 
-<<<<<<< HEAD
     res.json({
       success: true,
       token,
     });
   } catch (err) {
-    console.log(err);
+    console.error(err);
 
     res.status(500).json({
       success: false,
@@ -197,24 +164,8 @@ app.post("/login", async (req, res) => {
   }
 });
 
-=======
-    res.json({ success: true, token });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
+// ================= PROFILE =================
 
-// PROFILE
-  } catch {
-    res.status(500).json({ success: false });
-  }
-});
-
-/* ================= PROFILE ================= */
-
->>>>>>> 5140917ca530d3f14448efdecd5bde67f658efb5
->>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
 app.get("/profile", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
@@ -240,68 +191,9 @@ app.get("/profile", authMiddleware, async (req, res) => {
   }
 });
 
-// CHANGE PASSWORD
-app.post("/change-password", authMiddleware, async (req, res) => {
-  const { password, newPassword } = req.body;
-
-  if (!password || !newPassword) {
-    return res.json({
-      success: false,
-      message: "All fields required",
-    });
-  }
-
-  try {
-    const result = await pool.query(
-      "SELECT * FROM users WHERE id = $1",
-      [req.user.id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    const user = result.rows[0];
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.json({
-        success: false,
-        message: "Wrong password",
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    await pool.query(
-      "UPDATE users SET password = $1 WHERE id = $2",
-      [hashedPassword, req.user.id]
-    );
-
-    res.json({
-      success: true,
-      message: "Password updated",
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-});
-
-<<<<<<< HEAD
-=======
-/* ================= EMPLOYEES ================= */
+// ================= EMPLOYEES =================
 
 // GET employees
->>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
 app.get("/employees", authMiddleware, async (req, res) => {
   const { search, role } = req.query;
 
@@ -387,10 +279,7 @@ app.delete("/employees/:id", authMiddleware, async (req, res) => {
   const id = req.params.id;
 
   try {
-    await pool.query(
-      "DELETE FROM employees WHERE id=$1",
-      [id]
-    );
+    await pool.query("DELETE FROM employees WHERE id=$1", [id]);
 
     res.json({
       success: true,
@@ -405,6 +294,8 @@ app.delete("/employees/:id", authMiddleware, async (req, res) => {
     });
   }
 });
+
+// ================= PROJECTS =================
 
 app.get("/projects", authMiddleware, async (req, res) => {
   try {
@@ -475,10 +366,7 @@ app.delete("/projects/:id", authMiddleware, async (req, res) => {
   const id = req.params.id;
 
   try {
-    await pool.query(
-      "DELETE FROM projects WHERE id=$1",
-      [id]
-    );
+    await pool.query("DELETE FROM projects WHERE id=$1", [id]);
 
     res.json({
       success: true,
@@ -494,7 +382,8 @@ app.delete("/projects/:id", authMiddleware, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
+// ================= CHATBOT =================
+
 app.post("/chatbot", authMiddleware, async (req, res) => {
   try {
     const { message } = req.body;
@@ -519,49 +408,57 @@ app.post("/chatbot", authMiddleware, async (req, res) => {
       Number(projectsResult.rows[0].count) +
       Number(employeeProjectsResult.rows[0].total);
 
-    const context = `
-      ERP System Data:
-
-      Total Employees: ${employeesResult.rows[0].count}
-
-      Total Projects: ${totalProjects}
-
-      Total Salary: ${salaryResult.rows[0].total}
-    `;
-
     const prompt = `
-      You are an intelligent ERP assistant chatbot.
+You are an intelligent ERP AI assistant.
 
-      Use the ERP data provided below while answering.
+ERP DATA:
+- Total Employees: ${employeesResult.rows[0].count}
+- Total Projects: ${totalProjects}
+- Total Salary: ₹${salaryResult.rows[0].total}
 
-      ${context}
+User Question:
+${message}
+`;
 
-      User Question:
-      ${message}
-    `;
+    try {
+      const result = await model.generateContent(prompt);
 
-    const result = await model.generateContent(prompt);
+      const reply = result.response.text();
 
-    const response = result.response.text();
+      res.json({
+        success: true,
+        reply,
+      });
+    } catch (geminiError) {
+      console.log("Gemini Error:", geminiError.message);
 
-    res.json({
-      success: true,
-      reply: response,
-    });
+      // Fallback response
+      res.json({
+        success: true,
+        reply: `
+Gemini AI is temporarily unavailable.
+
+ERP DATA:
+- Employees: ${employeesResult.rows[0].count}
+- Projects: ${totalProjects}
+- Salary: ₹${salaryResult.rows[0].total}
+
+Your Message:
+${message}
+        `,
+      });
+    }
   } catch (err) {
     console.log(err);
 
     res.status(500).json({
       success: false,
-      reply:
-        "Gemini API quota exceeded or API key issue. Try again later.",
+      reply: "Chatbot server error",
     });
   }
 });
-=======
->>>>>>> 5140917ca530d3f14448efdecd5bde67f658efb5
+
 /* ================= DASHBOARD ================= */
->>>>>>> e83e1b6c9062082841f0e73041283c2f1f646ba0
 
 app.get("/dashboard", authMiddleware, async (req, res) => {
   try {
