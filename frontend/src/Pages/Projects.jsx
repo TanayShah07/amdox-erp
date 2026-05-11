@@ -13,7 +13,6 @@ const Projects = () => {
 
   const token = localStorage.getItem("token");
 
-  // 🔐 FETCH PROJECTS
   const fetchProjects = async () => {
     try {
       const res = await fetch("http://localhost:5000/projects", {
@@ -22,13 +21,14 @@ const Projects = () => {
         },
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        localStorage.removeItem("token");
-        window.location.href = "/";
+        console.log(data);
+        toast.error("Failed to fetch projects");
         return;
       }
 
-      const data = await res.json();
       setProjects(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
@@ -36,7 +36,6 @@ const Projects = () => {
     }
   };
 
-  // ➕ ADD / UPDATE PROJECT
   const addOrUpdate = async () => {
     if (!name || !status || !budget) {
       toast.error("Please fill all fields");
@@ -51,7 +50,6 @@ const Projects = () => {
 
     try {
       if (editId) {
-        // ✏️ UPDATE
         await fetch(`http://localhost:5000/projects/${editId}`, {
           method: "PUT",
           headers: {
@@ -61,10 +59,9 @@ const Projects = () => {
           body: JSON.stringify(body),
         });
 
-        toast.success("Project Updated ✅");
+        toast.success("Project Updated");
         setEditId(null);
       } else {
-        // ➕ ADD
         await fetch("http://localhost:5000/projects", {
           method: "POST",
           headers: {
@@ -74,10 +71,9 @@ const Projects = () => {
           body: JSON.stringify(body),
         });
 
-        toast.success("Project Added ✅");
+        toast.success("Project Added");
       }
 
-      // CLEAR FORM
       setName("");
       setStatus("");
       setBudget("");
@@ -89,7 +85,6 @@ const Projects = () => {
     }
   };
 
-  // ❌ DELETE
   const deleteProject = async (id) => {
     try {
       await fetch(`http://localhost:5000/projects/${id}`, {
@@ -99,7 +94,7 @@ const Projects = () => {
         },
       });
 
-      toast.success("Project Deleted ❌");
+      toast.success("Project Deleted");
       fetchProjects();
     } catch (err) {
       console.error(err);
@@ -107,7 +102,6 @@ const Projects = () => {
     }
   };
 
-  // ✏️ EDIT
   const editProject = (p) => {
     setName(p.name);
     setStatus(p.status);
@@ -115,7 +109,6 @@ const Projects = () => {
     setEditId(p.id);
   };
 
-  // 🎨 STATUS COLORS
   const getStatusColor = (status) => {
     if (status.toLowerCase() === "completed") {
       return "bg-green-100 text-green-700";
@@ -134,19 +127,14 @@ const Projects = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-
-      {/* ✅ SIDEBAR */}
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
-      {/* ✅ CONTENT */}
       <div
         className={`flex-1 transition-all duration-300 ${
           isOpen ? "ml-64" : "ml-0"
         }`}
       >
         <div className="p-6 pt-20">
-
-          {/* 🔝 HEADER */}
           <div className="flex items-center gap-4 mb-6">
             {!isOpen && (
               <button
@@ -165,7 +153,6 @@ const Projects = () => {
             </div>
           </div>
 
-          {/* 📊 CARD */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div className="bg-white p-6 rounded-2xl shadow">
               <p className="text-gray-500">Total Projects</p>
@@ -175,14 +162,12 @@ const Projects = () => {
             </div>
           </div>
 
-          {/* ➕ FORM */}
           <div className="bg-white p-6 rounded-2xl shadow mb-6">
             <h2 className="text-xl font-semibold mb-4">
               {editId ? "Update Project" : "Add New Project"}
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
               <input
                 className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Project Name"
@@ -207,11 +192,9 @@ const Projects = () => {
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
               />
-
             </div>
 
             <div className="flex gap-3 mt-4">
-
               <button
                 onClick={addOrUpdate}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
@@ -232,13 +215,10 @@ const Projects = () => {
                   Cancel
                 </button>
               )}
-
             </div>
           </div>
 
-          {/* 📋 TABLE */}
           <div className="bg-white rounded-2xl shadow overflow-hidden">
-
             <div className="p-5 border-b">
               <h2 className="text-xl font-semibold">
                 Projects List
@@ -251,7 +231,6 @@ const Projects = () => {
               </div>
             ) : (
               <table className="w-full text-left">
-
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="p-4">Project</th>
@@ -286,7 +265,6 @@ const Projects = () => {
                       </td>
 
                       <td className="p-4">
-
                         <button
                           onClick={() => editProject(p)}
                           className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mr-3 hover:bg-blue-200"
@@ -300,17 +278,13 @@ const Projects = () => {
                         >
                           Delete
                         </button>
-
                       </td>
                     </tr>
                   ))}
                 </tbody>
-
               </table>
             )}
-
           </div>
-
         </div>
       </div>
     </div>
