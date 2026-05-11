@@ -13,52 +13,55 @@ export default function Auth() {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    const url = isLogin
-      ? "http://localhost:5000/login"
-      : "http://localhost:5000/signup";
+  const url = isLogin
+    ? "http://localhost:5000/login"
+    : "http://localhost:5000/signup";
 
-    const body = isLogin
-      ? { email, password }
-      : { name, email, password };
+  const body = isLogin
+    ? { email, password }
+    : { name, email, password };
 
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      console.log("RESPONSE:", data);
+    console.log("RESPONSE:", data);
 
-      if (data.success) {
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-        }
+    if (data.success && data.token) {
+      localStorage.setItem("token", data.token);
 
-        toast.success(
-          isLogin
-            ? "Login successful 🎉"
-            : "Signup successful 🎉"
-        );
+      console.log(
+        "Saved Token:",
+        localStorage.getItem("token")
+      );
 
-        navigate("/dashboard");
-      } else {
-        toast.error(data.message || "Invalid credentials");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Server error. Try again.");
+      toast.success(
+        isLogin
+          ? "Login successful 🎉"
+          : "Signup successful 🎉"
+      );
+
+      navigate("/dashboard");
+    } else {
+      toast.error(data.message || "Invalid credentials");
     }
+  } catch (err) {
+    console.error(err);
+    toast.error("Server error. Try again.");
+  }
 
-    setLoading(false);
-  };
+  setLoading(false);
+};
 
   return (
     <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-gray-200">

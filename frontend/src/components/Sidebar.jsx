@@ -68,7 +68,6 @@ export default function Sidebar({ isOpen, setIsOpen })
           </button>
         </div>
       </div>
-
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-30 z-30"
