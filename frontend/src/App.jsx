@@ -6,6 +6,8 @@ import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
 import Profile from "./pages/Profile";
 import Projects from "./pages/Projects";
+import Attendance from "./pages/Attendance";
+import Leaves from "./pages/Leaves";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -56,6 +58,19 @@ function App() {
               <Projects />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="/attendance" 
+          element={
+            <Attendance />
+          } 
+        />
+
+        <Route
+          path="/leaves"
+          element={
+            <Leaves />
+          } 
         />
 
       </Routes>

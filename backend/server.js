@@ -505,7 +505,212 @@ app.get("/dashboard", authMiddleware, async (req, res) => {
     });
   }
 });
+// ================= ATTENDANCE =================
 
+// Clock In
+app.post("/attendance/clock-in", authMiddleware, async (req, res) => {
+  const { employee_id } = req.body;
+
+  try {
+    const existing = await pool.query(
+      "SELECT * FROM attendance WHERE employee_id=$1 AND date=CURRENT_DATE",
+      [employee_id]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.json({
+        success: false,
+        message: "Already clocked in today",
+      });
+    }
+
+    await pool.query(
+      "INSERT INTO attendance (employee_id, clock_in, status) VALUES ($1, NOW(), 'Present')",
+      [employee_id]
+    );
+
+    res.json({
+      success: true,
+      message: "Clock In successful",
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Clock In error",
+    });
+  }
+});
+
+// Clock Out
+app.post("/attendance/clock-out", authMiddleware, async (req, res) => {
+  const { employee_id } = req.body;
+
+  try {
+    const result = await pool.query(
+      `
+      UPDATE attendance
+      SET clock_out = NOW()
+      WHERE employee_id=$1
+      AND date=CURRENT_DATE
+      RETURNING *
+      `,
+      [employee_id]
+    );
+
+    res.json({
+      success: true,
+      message: "Clock Out successful",
+      data: result.rows[0],
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Clock Out error",
+    });
+  }
+});
+
+// Get Attendance
+app.get("/attendance", authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        attendance.*,
+        employees.name
+      FROM attendance
+      JOIN employees
+      ON attendance.employee_id = employees.id
+      ORDER BY attendance.date DESC
+    `);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Attendance fetch error",
+    });
+  }
+});
+
+// ================= LEAVES =================
+
+// Apply Leave
+app.post("/leaves", authMiddleware, async (req, res) => {
+  const {
+    employee_id,
+    leave_type,
+    reason,
+    from_date,
+    to_date,
+  } = req.body;
+
+  try {
+    await pool.query(
+      `
+      INSERT INTO leaves
+      (employee_id, leave_type, reason, from_date, to_date)
+      VALUES ($1, $2, $3, $4, $5)
+      `,
+      [
+        employee_id,
+        leave_type,
+        reason,
+        from_date,
+        to_date,
+      ]
+    );
+
+    res.json({
+      success: true,
+      message: "Leave applied successfully",
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Leave apply error",
+    });
+  }
+});
+
+// Get Leaves
+app.get("/leaves", authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        leaves.*,
+        employees.name
+      FROM leaves
+      JOIN employees
+      ON leaves.employee_id = employees.id
+      ORDER BY leaves.created_at DESC
+    `);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Leave fetch error",
+    });
+  }
+});
+
+// Approve Leave
+app.put("/leaves/:id/approve", authMiddleware, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    await pool.query(
+      "UPDATE leaves SET status='Approved' WHERE id=$1",
+      [id]
+    );
+
+    res.json({
+      success: true,
+      message: "Leave approved",
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Approval error",
+    });
+  }
+});
+
+// Reject Leave
+app.put("/leaves/:id/reject", authMiddleware, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    await pool.query(
+      "UPDATE leaves SET status='Rejected' WHERE id=$1",
+      [id]
+    );
+
+    res.json({
+      success: true,
+      message: "Leave rejected",
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Reject error",
+    });
+  }
+});
 app.listen(5000, () => {
   console.log("Server running on port 5000");
 });
