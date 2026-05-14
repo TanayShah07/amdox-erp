@@ -8,6 +8,7 @@ export default function Attendance() {
   const [isOpen, setIsOpen] = useState(true);
 
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
   const fetchAttendance = async () => {
     try {
@@ -22,9 +23,10 @@ export default function Attendance() {
 
       const data = await res.json();
 
-      setAttendance(data);
+      setAttendance(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log(err);
+      toast.error("Failed to fetch attendance");
     }
   };
 
@@ -59,6 +61,7 @@ export default function Attendance() {
       }
     } catch (err) {
       console.log(err);
+      toast.error("Clock In failed");
     }
   };
 
@@ -93,6 +96,7 @@ export default function Attendance() {
       }
     } catch (err) {
       console.log(err);
+      toast.error("Clock Out failed");
     }
   };
 
@@ -128,32 +132,35 @@ export default function Attendance() {
             </h1>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow mb-6 flex flex-col md:flex-row gap-4">
-            <input
-              type="number"
-              placeholder="Employee ID"
-              value={employeeId}
-              onChange={(e) =>
-                setEmployeeId(e.target.value)
-              }
-              className="border p-3 rounded-lg flex-1"
-            />
+          {/* ADMIN ONLY */}
+          
+            <div className="bg-white p-6 rounded-xl shadow mb-6 flex flex-col md:flex-row gap-4">
+              <input
+                type="number"
+                placeholder="Employee ID"
+                value={employeeId}
+                onChange={(e) =>
+                  setEmployeeId(e.target.value)
+                }
+                className="border p-3 rounded-lg flex-1"
+              />
 
-            <button
-              onClick={clockIn}
-              className="bg-green-500 text-white px-5 py-3 rounded-lg"
-            >
-              Clock In
-            </button>
+              <button
+                onClick={clockIn}
+                className="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-lg"
+              >
+                Clock In
+              </button>
 
-            <button
-              onClick={clockOut}
-              className="bg-red-500 text-white px-5 py-3 rounded-lg"
-            >
-              Clock Out
-            </button>
-          </div>
-
+              <button
+                onClick={clockOut}
+                className="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-lg"
+              >
+                Clock Out
+              </button>
+            </div>
+        
+          {/* ATTENDANCE TABLE */}
           <div className="bg-white rounded-xl shadow overflow-auto">
             <table className="w-full">
               <thead className="bg-gray-100">
@@ -184,7 +191,7 @@ export default function Attendance() {
                 {attendance.map((item) => (
                   <tr
                     key={item.id}
-                    className="border-t"
+                    className="border-t hover:bg-gray-50"
                   >
                     <td className="p-4">
                       {item.name}
@@ -211,7 +218,13 @@ export default function Attendance() {
                     </td>
 
                     <td className="p-4">
-                      <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          item.status === "Present"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
                         {item.status}
                       </span>
                     </td>
@@ -219,6 +232,12 @@ export default function Attendance() {
                 ))}
               </tbody>
             </table>
+
+            {attendance.length === 0 && (
+              <div className="p-8 text-center text-gray-500">
+                No Attendance Records
+              </div>
+            )}
           </div>
         </div>
       </div>

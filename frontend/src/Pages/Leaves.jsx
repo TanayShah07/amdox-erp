@@ -10,9 +10,10 @@ export default function Leaves() {
   const [reason, setReason] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-   const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(true);
 
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
   const fetchLeaves = async () => {
     try {
@@ -27,9 +28,10 @@ export default function Leaves() {
 
       const data = await res.json();
 
-      setLeaves(data);
+      setLeaves(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log(err);
+      toast.error("Failed to fetch leaves");
     }
   };
 
@@ -81,6 +83,7 @@ export default function Leaves() {
       }
     } catch (err) {
       console.log(err);
+      toast.error("Failed to apply leave");
     }
   };
 
@@ -103,6 +106,7 @@ export default function Leaves() {
       fetchLeaves();
     } catch (err) {
       console.log(err);
+      toast.error("Approve failed");
     }
   };
 
@@ -125,6 +129,7 @@ export default function Leaves() {
       fetchLeaves();
     } catch (err) {
       console.log(err);
+      toast.error("Reject failed");
     }
   };
 
@@ -132,165 +137,209 @@ export default function Leaves() {
     fetchLeaves();
   }, []);
 
- return (
-  <div className="flex min-h-screen bg-gray-100">
-    <Sidebar
-      isOpen={isOpen}
-      setIsOpen={setIsOpen}
-    />
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+      />
 
-    <div
-      className={`flex-1 transition-all duration-300 ${
-        isOpen ? "ml-64" : "ml-0"
-      }`}
-    >
-      <div className="p-6 pt-20">
-           
-               <button
-                 onClick={() => setIsOpen(true)}
-                 className="bg-white p-2 rounded shadow"
-               >
-                 ☰
-               </button>
-           
-      <h1 className="text-3xl font-bold mb-6">
-        Leave Management
-      </h1>
+      <div
+        className={`flex-1 transition-all duration-300 ${
+          isOpen ? "ml-64" : "ml-0"
+        }`}
+      >
+        <div className="p-6 pt-20">
+          {!isOpen && (
+            <button
+              onClick={() => setIsOpen(true)}
+              className="bg-white p-2 rounded shadow mb-4"
+            >
+              ☰
+            </button>
+          )}
 
-      <div className="bg-white p-6 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input
-          type="number"
-          placeholder="Employee ID"
-          value={employeeId}
-          onChange={(e) => setEmployeeId(e.target.value)}
-          className="border p-3 rounded-lg"
-        />
+          <h1 className="text-3xl font-bold mb-6">
+            Leave Management
+          </h1>
 
-        <select
-          value={leaveType}
-          onChange={(e) => setLeaveType(e.target.value)}
-          className="border p-3 rounded-lg"
-        >
-          <option value="">Select Leave Type</option>
-          <option value="Sick Leave">
-            Sick Leave
-          </option>
-          <option value="Casual Leave">
-            Casual Leave
-          </option>
-          <option value="Paid Leave">
-            Paid Leave
-          </option>
-        </select>
+          {/* APPLY LEAVE FORM */}
+          <div className="bg-white p-6 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              type="number"
+              placeholder="Employee ID"
+              value={employeeId}
+              onChange={(e) =>
+                setEmployeeId(e.target.value)
+              }
+              className="border p-3 rounded-lg"
+            />
 
-        <input
-          type="date"
-          value={fromDate}
-          onChange={(e) => setFromDate(e.target.value)}
-          className="border p-3 rounded-lg"
-        />
+            <select
+              value={leaveType}
+              onChange={(e) =>
+                setLeaveType(e.target.value)
+              }
+              className="border p-3 rounded-lg"
+            >
+              <option value="">
+                Select Leave Type
+              </option>
 
-        <input
-          type="date"
-          value={toDate}
-          onChange={(e) => setToDate(e.target.value)}
-          className="border p-3 rounded-lg"
-        />
+              <option value="Sick Leave">
+                Sick Leave
+              </option>
 
-        <textarea
-          placeholder="Reason"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          className="border p-3 rounded-lg md:col-span-2"
-        />
+              <option value="Casual Leave">
+                Casual Leave
+              </option>
 
-        <button
-          onClick={applyLeave}
-          className="bg-blue-600 text-white py-3 rounded-lg md:col-span-2"
-        >
-          Apply Leave
-        </button>
-      </div>
+              <option value="Paid Leave">
+                Paid Leave
+              </option>
+            </select>
 
-      <div className="bg-white rounded-xl shadow overflow-auto">
-        <table className="w-full">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-4 text-left">Employee</th>
-              <th className="p-4 text-left">Type</th>
-              <th className="p-4 text-left">Reason</th>
-              <th className="p-4 text-left">From</th>
-              <th className="p-4 text-left">To</th>
-              <th className="p-4 text-left">Status</th>
-              <th className="p-4 text-left">Actions</th>
-            </tr>
-          </thead>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) =>
+                setFromDate(e.target.value)
+              }
+              className="border p-3 rounded-lg"
+            />
 
-          <tbody>
-            {leaves.map((item) => (
-              <tr
-                key={item.id}
-                className="border-t"
-              >
-                <td className="p-4">{item.name}</td>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) =>
+                setToDate(e.target.value)
+              }
+              className="border p-3 rounded-lg"
+            />
 
-                <td className="p-4">
-                  {item.leave_type}
-                </td>
+            <textarea
+              placeholder="Reason"
+              value={reason}
+              onChange={(e) =>
+                setReason(e.target.value)
+              }
+              className="border p-3 rounded-lg md:col-span-2"
+            />
 
-                <td className="p-4">
-                  {item.reason}
-                </td>
+            <button
+              onClick={applyLeave}
+              className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg md:col-span-2"
+            >
+              Apply Leave
+            </button>
+          </div>
 
-                <td className="p-4">
-                  {item.from_date?.split("T")[0]}
-                </td>
+          {/* LEAVES TABLE */}
+          <div className="bg-white rounded-xl shadow overflow-auto">
+            <table className="w-full">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-4 text-left">
+                    Employee
+                  </th>
 
-                <td className="p-4">
-                  {item.to_date?.split("T")[0]}
-                </td>
+                  <th className="p-4 text-left">
+                    Type
+                  </th>
 
-                <td className="p-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-white ${
-                      item.status === "Approved"
-                        ? "bg-green-500"
-                        : item.status === "Rejected"
-                        ? "bg-red-500"
-                        : "bg-yellow-500"
-                    }`}
+                  <th className="p-4 text-left">
+                    Reason
+                  </th>
+
+                  <th className="p-4 text-left">
+                    From
+                  </th>
+
+                  <th className="p-4 text-left">
+                    To
+                  </th>
+
+                  <th className="p-4 text-left">
+                    Status
+                  </th>
+
+                  {role === "admin" && (
+                    <th className="p-4 text-left">
+                      Actions
+                    </th>
+                  )}
+                </tr>
+              </thead>
+
+              <tbody>
+                {leaves.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="border-t hover:bg-gray-50"
                   >
-                    {item.status}
-                  </span>
-                </td>
+                    <td className="p-4">
+                      {item.name}
+                    </td>
 
-                <td className="p-4 flex gap-2">
-                  <button
-                    onClick={() =>
-                      approveLeave(item.id)
-                    }
-                    className="bg-green-500 text-white px-3 py-1 rounded"
-                  >
-                    Approve
-                  </button>
+                    <td className="p-4">
+                      {item.leave_type}
+                    </td>
 
-                  <button
-                    onClick={() =>
-                      rejectLeave(item.id)
-                    }
-                    className="bg-red-500 text-white px-3 py-1 rounded"
-                  >
-                    Reject
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    <td className="p-4">
+                      {item.reason}
+                    </td>
+
+                    <td className="p-4">
+                      {item.from_date?.split("T")[0]}
+                    </td>
+
+                    <td className="p-4">
+                      {item.to_date?.split("T")[0]}
+                    </td>
+
+                    <td className="p-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-white ${
+                          item.status === "Approved"
+                            ? "bg-green-500"
+                            : item.status ===
+                              "Rejected"
+                            ? "bg-red-500"
+                            : "bg-yellow-500"
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+
+                    {role === "admin" && (
+                      <td className="p-4 flex gap-2">
+                        <button
+                          onClick={() =>
+                            approveLeave(item.id)
+                          }
+                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+                        >
+                          Approve
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            rejectLeave(item.id)
+                          }
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                        >
+                          Reject
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
-    </div>
-  </div>
-  
-);
+  );
 }

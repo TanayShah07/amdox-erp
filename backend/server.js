@@ -66,6 +66,19 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+const roleMiddleware = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    next();
+  };
+};
+
 // ================= SIGNUP =================
 
 app.post("/signup", async (req, res) => {
@@ -93,9 +106,12 @@ app.post("/signup", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // default role
+    const role = "employee";
+
     await pool.query(
-      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3)",
-      [name, email, hashedPassword]
+      "INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)",
+      [name, email, hashedPassword, role]
     );
 
     res.json({
@@ -152,17 +168,19 @@ app.post("/login", async (req, res) => {
       {
         id: user.id,
         email: user.email,
-      },
+        role: user.role,
+     },
       JWT_SECRET,
       {
         expiresIn: "1h",
       }
     );
 
-    res.json({
+      res.json({
       success: true,
       token,
-    });
+      role: user.role,
+   });
   } catch (err) {
     console.error(err);
 
@@ -234,7 +252,7 @@ app.get("/employees", authMiddleware, async (req, res) => {
 });
 
 // ADD employee
-app.post("/employees", authMiddleware, async (req, res) => {
+app.post( "/employees", authMiddleware, roleMiddleware("admin"), async (req, res) => {
   const { name, role, salary, projects } = req.body;
 
   try {
@@ -258,7 +276,7 @@ app.post("/employees", authMiddleware, async (req, res) => {
 });
 
 // UPDATE employee
-app.put("/employees/:id", authMiddleware, async (req, res) => {
+app.put( "/employees/:id", authMiddleware, roleMiddleware("admin", "hr"), async (req, res) => {
   const { name, role, salary, projects } = req.body;
 
   const id = req.params.id;
@@ -284,8 +302,8 @@ app.put("/employees/:id", authMiddleware, async (req, res) => {
 });
 
 // DELETE employee
-app.delete("/employees/:id", authMiddleware, async (req, res) => {
-  const id = req.params.id;
+  app.delete("/employees/:id", authMiddleware, roleMiddleware("admin"), async (req, res) =>{
+   const id = req.params.id;
 
   try {
     await pool.query("DELETE FROM employees WHERE id=$1", [id]);
@@ -323,7 +341,7 @@ app.get("/projects", authMiddleware, async (req, res) => {
   }
 });
 
-app.post("/projects", authMiddleware, async (req, res) => {
+app.post( "/projects", authMiddleware, roleMiddleware("admin"), async (req, res) => {
   const { name, status, budget } = req.body;
 
   try {
@@ -346,7 +364,7 @@ app.post("/projects", authMiddleware, async (req, res) => {
   }
 });
 
-app.put("/projects/:id", authMiddleware, async (req, res) => {
+app.put("/projects/:id", authMiddleware, roleMiddleware("admin"), async (req, res) => {
   const { name, status, budget } = req.body;
 
   const id = req.params.id;
@@ -371,7 +389,7 @@ app.put("/projects/:id", authMiddleware, async (req, res) => {
   }
 });
 
-app.delete("/projects/:id", authMiddleware, async (req, res) => {
+app.delete( "/projects/:id", authMiddleware, roleMiddleware("admin"), async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -665,7 +683,7 @@ app.get("/leaves", authMiddleware, async (req, res) => {
 });
 
 // Approve Leave
-app.put("/leaves/:id/approve", authMiddleware, async (req, res) => {
+app.put("/leave/approve/:id", authMiddleware, roleMiddleware("admin", "hr"), async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -689,7 +707,7 @@ app.put("/leaves/:id/approve", authMiddleware, async (req, res) => {
 });
 
 // Reject Leave
-app.put("/leaves/:id/reject", authMiddleware, async (req, res) => {
+app.put("/leave/reject/:id", authMiddleware, roleMiddleware("admin", "hr"), async (req, res) => {
   const id = req.params.id;
 
   try {

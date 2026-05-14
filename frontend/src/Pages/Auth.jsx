@@ -39,6 +39,7 @@ export default function Auth() {
 
     if (data.success && data.token) {
       localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role);
 
       console.log(
         "Saved Token:",

@@ -6,6 +6,8 @@ import toast from "react-hot-toast";
 export default function Employees() {
   const navigate = useNavigate();
 
+  const userRole = localStorage.getItem("role");
+
   const [isOpen, setIsOpen] = useState(true);
 
   const [employees, setEmployees] = useState([]);
@@ -300,67 +302,69 @@ export default function Employees() {
           </div>
 
           {/* ➕ FORM */}
-          <div className="bg-white p-6 rounded-2xl shadow mb-6">
-            <h2 className="text-xl font-semibold mb-4">
-              {editId
-                ? "Update Employee"
-                : "Add New Employee"}
-            </h2>
+          {(userRole === "admin" || userRole === "hr") && (
+            <div className="bg-white p-6 rounded-2xl shadow mb-6">
+              <h2 className="text-xl font-semibold mb-4">
+                {editId
+                  ? "Update Employee"
+                  : "Add New Employee"}
+              </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <input
-                className="border p-3 rounded-xl"
-                placeholder="Employee Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input
+                  className="border p-3 rounded-xl"
+                  placeholder="Employee Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
 
-              <input
-                className="border p-3 rounded-xl"
-                placeholder="Role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-              />
+                <input
+                  className="border p-3 rounded-xl"
+                  placeholder="Role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                />
 
-              <input
-                className="border p-3 rounded-xl"
-                placeholder="Salary"
-                value={salary}
-                onChange={(e) => setSalary(e.target.value)}
-              />
+                <input
+                  className="border p-3 rounded-xl"
+                  placeholder="Salary"
+                  value={salary}
+                  onChange={(e) => setSalary(e.target.value)}
+                />
 
-              <input
-                className="border p-3 rounded-xl"
-                placeholder="Projects"
-                value={projects}
-                onChange={(e) => setProjects(e.target.value)}
-              />
-            </div>
+                <input
+                  className="border p-3 rounded-xl"
+                  placeholder="Projects"
+                  value={projects}
+                  onChange={(e) => setProjects(e.target.value)}
+                />
+              </div>
 
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={addEmployee}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
-              >
-                {editId ? "Update Employee" : "Add Employee"}
-              </button>
-
-              {editId && (
+              <div className="flex gap-3 mt-4">
                 <button
-                  onClick={() => {
-                    setEditId(null);
-                    setName("");
-                    setRole("");
-                    setSalary("");
-                    setProjects("");
-                  }}
-                  className="bg-gray-300 hover:bg-gray-400 px-6 py-2 rounded-xl"
+                  onClick={addEmployee}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
                 >
-                  Cancel
+                  {editId ? "Update Employee" : "Add Employee"}
                 </button>
-              )}
+
+                {editId && (
+                  <button
+                    onClick={() => {
+                      setEditId(null);
+                      setName("");
+                      setRole("");
+                      setSalary("");
+                      setProjects("");
+                    }}
+                    className="bg-gray-300 hover:bg-gray-400 px-6 py-2 rounded-xl"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 📋 TABLE */}
           <div className="bg-white rounded-2xl shadow overflow-hidden">
@@ -382,7 +386,9 @@ export default function Employees() {
                     <th className="p-4">Role</th>
                     <th className="p-4">Salary</th>
                     <th className="p-4">Projects</th>
-                    <th className="p-4">Actions</th>
+                    {localStorage.getItem("role") === "admin" && (
+  <th className="p-4">Actions</th>
+)}
                   </tr>
                 </thead>
 
@@ -414,21 +420,27 @@ export default function Employees() {
                         {emp.projects}
                       </td>
 
-                      <td className="p-4">
-                        <button
-                          onClick={() => editEmployee(emp)}
-                          className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mr-3 hover:bg-blue-200"
-                        >
-                          Edit
-                        </button>
+                      {(userRole === "admin" || userRole === "hr") && (
+                        <td className="p-4">
+                          <button
+                            onClick={() => editEmployee(emp)}
+                            className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mr-3 hover:bg-blue-200"
+                          >
+                            Edit
+                          </button>
 
-                        <button
-                          onClick={() => deleteEmployee(emp.id)}
-                          className="bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200"
-                        >
-                          Delete
-                        </button>
-                      </td>
+                          {userRole === "admin" && (
+                            <button
+                              onClick={() =>
+                                deleteEmployee(emp.id)
+                              }
+                              className="bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200"
+                            >
+                             Delete
+                           </button>
+                         )}
+                       </td>
+                     )}
                     </tr>
                   ))}
                 </tbody>

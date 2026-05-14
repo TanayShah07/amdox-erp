@@ -12,6 +12,7 @@ const Projects = () => {
   const [editId, setEditId] = useState(null);
 
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
   const fetchProjects = async () => {
     try {
@@ -107,6 +108,11 @@ const Projects = () => {
     setStatus(p.status);
     setBudget(p.budget);
     setEditId(p.id);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   const getStatusColor = (status) => {
@@ -135,6 +141,7 @@ const Projects = () => {
         }`}
       >
         <div className="p-6 pt-20">
+          {/* HEADER */}
           <div className="flex items-center gap-4 mb-6">
             {!isOpen && (
               <button
@@ -147,77 +154,95 @@ const Projects = () => {
 
             <div>
               <h1 className="text-3xl font-bold">Projects</h1>
+
               <p className="text-gray-500">
                 Manage company projects easily
               </p>
             </div>
           </div>
 
+          {/* STATS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div className="bg-white p-6 rounded-2xl shadow">
               <p className="text-gray-500">Total Projects</p>
+
               <h2 className="text-3xl font-bold mt-2">
                 {projects.length}
               </h2>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow mb-6">
-            <h2 className="text-xl font-semibold mb-4">
-              {editId ? "Update Project" : "Add New Project"}
-            </h2>
+          {/* ADD / UPDATE FORM */}
+          {role === "admin" && (
+            <div className="bg-white p-6 rounded-2xl shadow mb-6">
+              <h2 className="text-xl font-semibold mb-4">
+                {editId
+                  ? "Update Project"
+                  : "Add New Project"}
+              </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input
-                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Project Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input
+                  className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Project Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
 
-              <select
-                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                <option value="">Select Status</option>
-                <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-              </select>
-
-              <input
-                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Budget"
-                value={budget}
-                onChange={(e) => setBudget(e.target.value)}
-              />
-            </div>
-
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={addOrUpdate}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
-              >
-                {editId ? "Update Project" : "Add Project"}
-              </button>
-
-              {editId && (
-                <button
-                  onClick={() => {
-                    setEditId(null);
-                    setName("");
-                    setStatus("");
-                    setBudget("");
-                  }}
-                  className="bg-gray-300 hover:bg-gray-400 px-6 py-2 rounded-lg"
+                <select
+                  className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
                 >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </div>
+                  <option value="">Select Status</option>
 
+                  <option value="Pending">Pending</option>
+
+                  <option value="In Progress">
+                    In Progress
+                  </option>
+
+                  <option value="Completed">
+                    Completed
+                  </option>
+                </select>
+
+                <input
+                  className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Budget"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={addOrUpdate}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+                >
+                  {editId
+                    ? "Update Project"
+                    : "Add Project"}
+                </button>
+
+                {editId && (
+                  <button
+                    onClick={() => {
+                      setEditId(null);
+                      setName("");
+                      setStatus("");
+                      setBudget("");
+                    }}
+                    className="bg-gray-300 hover:bg-gray-400 px-6 py-2 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* PROJECT TABLE */}
           <div className="bg-white rounded-2xl shadow overflow-hidden">
             <div className="p-5 border-b">
               <h2 className="text-xl font-semibold">
@@ -236,7 +261,10 @@ const Projects = () => {
                     <th className="p-4">Project</th>
                     <th className="p-4">Status</th>
                     <th className="p-4">Budget</th>
-                    <th className="p-4">Actions</th>
+
+                    {role === "admin" && (
+                      <th className="p-4">Actions</th>
+                    )}
                   </tr>
                 </thead>
 
@@ -264,21 +292,25 @@ const Projects = () => {
                         ₹ {p.budget}
                       </td>
 
-                      <td className="p-4">
-                        <button
-                          onClick={() => editProject(p)}
-                          className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mr-3 hover:bg-blue-200"
-                        >
-                          Edit
-                        </button>
+                      {role === "admin" && (
+                        <td className="p-4">
+                          <button
+                            onClick={() => editProject(p)}
+                            className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mr-3 hover:bg-blue-200"
+                          >
+                            Edit
+                          </button>
 
-                        <button
-                          onClick={() => deleteProject(p.id)}
-                          className="bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200"
-                        >
-                          Delete
-                        </button>
-                      </td>
+                          <button
+                            onClick={() =>
+                              deleteProject(p.id)
+                            }
+                            className="bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
