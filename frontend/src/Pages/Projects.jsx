@@ -8,6 +8,7 @@ const Projects = () => {
   const [name, setName] = useState("");
   const [status, setStatus] = useState("");
   const [budget, setBudget] = useState("");
+
   const [projects, setProjects] = useState([]);
   const [editId, setEditId] = useState(null);
 
@@ -25,17 +26,20 @@ const Projects = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        console.log(data);
         toast.error("Failed to fetch projects");
         return;
       }
 
       setProjects(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
+      console.log(err);
       toast.error("Failed to fetch projects");
     }
   };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   const addOrUpdate = async () => {
     if (!name || !status || !budget) {
@@ -43,13 +47,13 @@ const Projects = () => {
       return;
     }
 
-    const body = {
-      name,
-      status,
-      budget: Number(budget),
-    };
-
     try {
+      const body = {
+        name,
+        status,
+        budget: Number(budget),
+      };
+
       if (editId) {
         await fetch(`http://localhost:5000/projects/${editId}`, {
           method: "PUT",
@@ -61,7 +65,6 @@ const Projects = () => {
         });
 
         toast.success("Project Updated");
-        setEditId(null);
       } else {
         await fetch("http://localhost:5000/projects", {
           method: "POST",
@@ -78,11 +81,12 @@ const Projects = () => {
       setName("");
       setStatus("");
       setBudget("");
+      setEditId(null);
 
       fetchProjects();
     } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong");
+      console.log(err);
+      toast.error("Operation failed");
     }
   };
 
@@ -96,18 +100,19 @@ const Projects = () => {
       });
 
       toast.success("Project Deleted");
+
       fetchProjects();
     } catch (err) {
-      console.error(err);
+      console.log(err);
       toast.error("Delete failed");
     }
   };
 
-  const editProject = (p) => {
-    setName(p.name);
-    setStatus(p.status);
-    setBudget(p.budget);
-    setEditId(p.id);
+  const editProject = (project) => {
+    setName(project.name);
+    setStatus(project.status);
+    setBudget(project.budget);
+    setEditId(project.id);
 
     window.scrollTo({
       top: 0,
@@ -116,20 +121,16 @@ const Projects = () => {
   };
 
   const getStatusColor = (status) => {
-    if (status.toLowerCase() === "completed") {
+    if (status === "Completed") {
       return "bg-green-100 text-green-700";
     }
 
-    if (status.toLowerCase() === "pending") {
+    if (status === "Pending") {
       return "bg-yellow-100 text-yellow-700";
     }
 
     return "bg-blue-100 text-blue-700";
   };
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -141,7 +142,6 @@ const Projects = () => {
         }`}
       >
         <div className="p-6 pt-20">
-          {/* HEADER */}
           <div className="flex items-center gap-4 mb-6">
             {!isOpen && (
               <button
@@ -153,7 +153,9 @@ const Projects = () => {
             )}
 
             <div>
-              <h1 className="text-3xl font-bold">Projects</h1>
+              <h1 className="text-3xl font-bold">
+                Projects
+              </h1>
 
               <p className="text-gray-500">
                 Manage company projects easily
@@ -161,10 +163,11 @@ const Projects = () => {
             </div>
           </div>
 
-          {/* STATS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div className="bg-white p-6 rounded-2xl shadow">
-              <p className="text-gray-500">Total Projects</p>
+              <p className="text-gray-500">
+                Total Projects
+              </p>
 
               <h2 className="text-3xl font-bold mt-2">
                 {projects.length}
@@ -172,8 +175,7 @@ const Projects = () => {
             </div>
           </div>
 
-          {/* ADD / UPDATE FORM */}
-          {role === "admin" && (
+          {(role === "admin" || role === "hr") && (
             <div className="bg-white p-6 rounded-2xl shadow mb-6">
               <h2 className="text-xl font-semibold mb-4">
                 {editId
@@ -183,20 +185,29 @@ const Projects = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <input
-                  className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  type="text"
                   placeholder="Project Name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) =>
+                    setName(e.target.value)
+                  }
+                  className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
 
                 <select
-                  className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  onChange={(e) =>
+                    setStatus(e.target.value)
+                  }
+                  className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select Status</option>
+                  <option value="">
+                    Select Status
+                  </option>
 
-                  <option value="Pending">Pending</option>
+                  <option value="Pending">
+                    Pending
+                  </option>
 
                   <option value="In Progress">
                     In Progress
@@ -208,10 +219,13 @@ const Projects = () => {
                 </select>
 
                 <input
-                  className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  type="number"
                   placeholder="Budget"
                   value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
+                  onChange={(e) =>
+                    setBudget(e.target.value)
+                  }
+                  className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -242,7 +256,6 @@ const Projects = () => {
             </div>
           )}
 
-          {/* PROJECT TABLE */}
           <div className="bg-white rounded-2xl shadow overflow-hidden">
             <div className="p-5 border-b">
               <h2 className="text-xl font-semibold">
@@ -262,40 +275,46 @@ const Projects = () => {
                     <th className="p-4">Status</th>
                     <th className="p-4">Budget</th>
 
-                    {role === "admin" && (
-                      <th className="p-4">Actions</th>
+                    {(role === "admin" ||
+                      role === "hr") && (
+                      <th className="p-4">
+                        Actions
+                      </th>
                     )}
                   </tr>
                 </thead>
 
                 <tbody>
-                  {projects.map((p) => (
+                  {projects.map((project) => (
                     <tr
-                      key={p.id}
+                      key={project.id}
                       className="border-t hover:bg-gray-50 transition"
                     >
                       <td className="p-4 font-medium">
-                        {p.name}
+                        {project.name}
                       </td>
 
                       <td className="p-4">
                         <span
                           className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                            p.status
+                            project.status
                           )}`}
                         >
-                          {p.status}
+                          {project.status}
                         </span>
                       </td>
 
                       <td className="p-4 font-semibold">
-                        ₹ {p.budget}
+                        ₹ {project.budget}
                       </td>
 
-                      {role === "admin" && (
+                      {(role === "admin" ||
+                        role === "hr") && (
                         <td className="p-4">
                           <button
-                            onClick={() => editProject(p)}
+                            onClick={() =>
+                              editProject(project)
+                            }
                             className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mr-3 hover:bg-blue-200"
                           >
                             Edit
@@ -303,7 +322,9 @@ const Projects = () => {
 
                           <button
                             onClick={() =>
-                              deleteProject(p.id)
+                              deleteProject(
+                                project.id
+                              )
                             }
                             className="bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200"
                           >

@@ -4,65 +4,78 @@ import toast from "react-hot-toast";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("employee");
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+    e.preventDefault();
 
-  const url = isLogin
-    ? "http://localhost:5000/login"
-    : "http://localhost:5000/signup";
+    setLoading(true);
 
-  const body = isLogin
-    ? { email, password }
-    : { name, email, password };
+    const url = isLogin
+      ? "http://localhost:5000/login"
+      : "http://localhost:5000/signup";
 
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+    const body = isLogin
+      ? {
+          email,
+          password,
+        }
+      : {
+          name,
+          email,
+          password,
+          role,
+        };
 
-    const data = await res.json();
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
 
-    console.log("RESPONSE:", data);
+      const data = await res.json();
 
-    if (data.success && data.token) {
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
+      console.log("RESPONSE:", data);
 
-      console.log(
-        "Saved Token:",
-        localStorage.getItem("token")
-      );
+      if (data.success) {
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+        }
 
-      toast.success(
-        isLogin
-          ? "Login successful 🎉"
-          : "Signup successful 🎉"
-      );
+        if (data.role) {
+          localStorage.setItem("role", data.role);
+        }
 
-      navigate("/dashboard");
-    } else {
-      toast.error(data.message || "Invalid credentials");
+        toast.success(
+          isLogin
+            ? "Login successful"
+            : "Signup successful"
+        );
+
+        navigate("/dashboard");
+      } else {
+        toast.error(data.message || "Invalid credentials");
+      }
+    } catch (err) {
+      console.log(err);
+
+      toast.error("Server error");
     }
-  } catch (err) {
-    console.error(err);
-    toast.error("Server error. Try again.");
-  }
 
-  setLoading(false);
-};
+    setLoading(false);
+  };
 
   return (
     <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-gray-200">
@@ -75,14 +88,30 @@ export default function Auth() {
         </h2>
 
         {!isLogin && (
-          <input
-            type="text"
-            required
-            className="w-full p-3 border mb-3 rounded-lg"
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <>
+            <input
+              type="text"
+              required
+              className="w-full p-3 border mb-3 rounded-lg"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full p-3 border mb-3 rounded-lg"
+            >
+              <option value="employee">
+                Employee
+              </option>
+
+              <option value="hr">
+                HR
+              </option>
+            </select>
+          </>
         )}
 
         <input
@@ -102,21 +131,25 @@ export default function Auth() {
             className="w-full p-3 border mb-4 rounded-lg"
             placeholder="Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
           />
 
           <span
-            onClick={() => setShowPassword(!showPassword)}
+            onClick={() =>
+              setShowPassword(!showPassword)
+            }
             className="absolute right-3 top-3 cursor-pointer text-gray-500"
           >
-            {showPassword ? "🙈" : "👁"}
+            {showPassword ? "Hide" : "Show"}
           </span>
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-blue-600 text-white py-3 rounded-lg disabled:opacity-50"
         >
           {loading
             ? "Please wait..."

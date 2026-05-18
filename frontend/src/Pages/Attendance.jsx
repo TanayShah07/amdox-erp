@@ -55,6 +55,9 @@ export default function Attendance() {
 
       if (data.success) {
         toast.success(data.message);
+
+        setEmployeeId("");
+
         fetchAttendance();
       } else {
         toast.error(data.message);
@@ -90,6 +93,9 @@ export default function Attendance() {
 
       if (data.success) {
         toast.success(data.message);
+
+        setEmployeeId("");
+
         fetchAttendance();
       } else {
         toast.error(data.message);
@@ -132,8 +138,7 @@ export default function Attendance() {
             </h1>
           </div>
 
-          {/* ADMIN ONLY */}
-          
+          {(role === "admin" || role === "hr") && (
             <div className="bg-white p-6 rounded-xl shadow mb-6 flex flex-col md:flex-row gap-4">
               <input
                 type="number"
@@ -159,8 +164,8 @@ export default function Attendance() {
                 Clock Out
               </button>
             </div>
-        
-          {/* ATTENDANCE TABLE */}
+          )}
+
           <div className="bg-white rounded-xl shadow overflow-auto">
             <table className="w-full">
               <thead className="bg-gray-100">
@@ -194,27 +199,19 @@ export default function Attendance() {
                     className="border-t hover:bg-gray-50"
                   >
                     <td className="p-4">
-                      {item.name}
+                      {item.employee_name}
                     </td>
 
                     <td className="p-4">
-                      {item.date?.split("T")[0]}
+                      {item.date}
                     </td>
 
                     <td className="p-4">
-                      {item.clock_in
-                        ? new Date(
-                            item.clock_in
-                          ).toLocaleTimeString()
-                        : "-"}
+                      {item.clock_in || "-"}
                     </td>
 
                     <td className="p-4">
-                      {item.clock_out
-                        ? new Date(
-                            item.clock_out
-                          ).toLocaleTimeString()
-                        : "-"}
+                      {item.clock_out || "-"}
                     </td>
 
                     <td className="p-4">

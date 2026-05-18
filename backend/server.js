@@ -12,9 +12,9 @@ const app = express();
 
 const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
 
-// ================= GEMINI SETUP =================
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY
+);
 
 const model = genAI.getGenerativeModel({
   model: "gemini-2.5-flash",
@@ -29,14 +29,14 @@ app.use(
 
 app.use(express.json());
 
-// ================= AUTH MIDDLEWARE =================
-
 const authMiddleware = (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    const authHeader =
+      req.headers.authorization;
 
     if (!authHeader) {
       return res.status(401).json({
+        success: false,
         message: "No token provided",
       });
     }
@@ -45,23 +45,25 @@ const authMiddleware = (req, res, next) => {
 
     if (!token) {
       return res.status(401).json({
-        message: "Token missing",
+        success: false,
+        message: "Invalid token",
       });
     }
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET
+      JWT_SECRET
     );
 
     req.user = decoded;
 
     next();
   } catch (err) {
-    console.log("JWT ERROR:", err.message);
+    console.log(err);
 
-    return res.status(401).json({
-      message: "Invalid token",
+    res.status(401).json({
+      success: false,
+      message: "Unauthorized",
     });
   }
 };
@@ -79,10 +81,13 @@ const roleMiddleware = (...roles) => {
   };
 };
 
-// ================= SIGNUP =================
-
 app.post("/signup", async (req, res) => {
-  const { name, email, password } = req.body;
+  const {
+    name,
+    email,
+    password,
+    role,
+  } = req.body;
 
   if (!name || !email || !password) {
     return res.json({
@@ -92,53 +97,71 @@ app.post("/signup", async (req, res) => {
   }
 
   try {
-    const user = await pool.query(
+    const existingUser = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
 
-    if (user.rows.length > 0) {
+    if (existingUser.rows.length > 0) {
       return res.json({
         success: false,
         message: "User already exists",
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // default role
-    const role = "employee";
+    const hashedPassword =
+      await bcrypt.hash(password, 10);
 
     await pool.query(
-      "INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)",
-      [name, email, hashedPassword, role]
+      `
+      INSERT INTO users
+      (name, email, password, role)
+      VALUES ($1, $2, $3, $4)
+      `,
+      [
+        name,
+        email,
+        hashedPassword,
+        role || "employee",
+      ]
+    );
+
+    const result = await pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+
+    const user = result.rows[0];
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      JWT_SECRET,
+      {
+        expiresIn: "1h",
+      }
     );
 
     res.json({
       success: true,
-      message: "Signup successful",
+      token,
+      role: user.role,
     });
   } catch (err) {
-    console.error(err);
+    console.log(err);
 
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Signup failed",
     });
   }
 });
 
-// ================= LOGIN =================
-
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.json({
-      success: false,
-      message: "Invalid credentials",
-    });
-  }
 
   try {
     const result = await pool.query(
@@ -155,7 +178,10 @@ app.post("/login", async (req, res) => {
 
     const user = result.rows[0];
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!isMatch) {
       return res.json({
@@ -169,273 +195,702 @@ app.post("/login", async (req, res) => {
         id: user.id,
         email: user.email,
         role: user.role,
-     },
+      },
       JWT_SECRET,
       {
         expiresIn: "1h",
       }
     );
 
-      res.json({
+    res.json({
       success: true,
       token,
       role: user.role,
-   });
+    });
   } catch (err) {
-    console.error(err);
+    console.log(err);
 
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Login failed",
     });
   }
 });
 
-// ================= PROFILE =================
+app.get(
+  "/employees",
+  authMiddleware,
+  async (req, res) => {
+    const { search, role } = req.query;
 
-app.get("/profile", authMiddleware, async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT id, name, email FROM users WHERE id = $1",
-      [req.user.id]
-    );
+    try {
+      let query =
+        "SELECT * FROM employees WHERE 1=1";
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
+      let values = [];
+
+      if (search) {
+        values.push(`%${search}%`);
+
+        query += ` AND name ILIKE $${
+          values.length
+        }`;
+      }
+
+      if (role) {
+        values.push(role);
+
+        query += ` AND LOWER(role) = LOWER($${
+          values.length
+        })`;
+      }
+
+      const result = await pool.query(
+        query,
+        values
+      );
+
+      res.json(result.rows);
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
         success: false,
-        message: "User not found",
       });
     }
-
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
   }
-});
+);
 
-// ================= EMPLOYEES =================
+app.post(
+  "/employees",
+  authMiddleware,
+  roleMiddleware("admin", "hr"),
+  async (req, res) => {
+    const {
+      employee_code,
+      name,
+      role,
+      salary,
+      projects,
+    } = req.body;
 
-// GET employees
-app.get("/employees", authMiddleware, async (req, res) => {
-  const { search, role } = req.query;
+    try {
+      await pool.query(
+        `
+        INSERT INTO employees
+        (
+          employee_code,
+          name,
+          role,
+          salary,
+          projects
+        )
+        VALUES ($1, $2, $3, $4, $5)
+        `,
+        [
+          employee_code,
+          name,
+          role,
+          salary,
+          projects,
+        ]
+      );
 
-  try {
-    let query = "SELECT * FROM employees WHERE 1=1";
-    let values = [];
+      res.json({
+        success: true,
+        message: "Employee added",
+      });
+    } catch (err) {
+      console.log(err);
 
-    if (search) {
-      values.push(`%${search}%`);
-      query += ` AND name ILIKE $${values.length}`;
+      res.status(500).json({
+        success: false,
+      });
     }
+  }
+);
 
-    if (role) {
-      values.push(role);
-      query += ` AND LOWER(role) = LOWER($${values.length})`;
+app.put(
+  "/employees/:id",
+  authMiddleware,
+  roleMiddleware("admin", "hr"),
+  async (req, res) => {
+    const id = req.params.id;
+
+    const {
+      employee_code,
+      name,
+      role,
+      salary,
+      projects,
+    } = req.body;
+
+    try {
+      await pool.query(
+        `
+        UPDATE employees
+        SET
+        employee_code = $1,
+        name = $2,
+        role = $3,
+        salary = $4,
+        projects = $5
+        WHERE id = $6
+        `,
+        [
+          employee_code,
+          name,
+          role,
+          salary,
+          projects,
+          id,
+        ]
+      );
+
+      res.json({
+        success: true,
+        message: "Employee updated",
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
     }
-
-    const result = await pool.query(query, values);
-
-    res.json(result.rows);
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
   }
-});
+);
 
-// ADD employee
-app.post( "/employees", authMiddleware, roleMiddleware("admin"), async (req, res) => {
-  const { name, role, salary, projects } = req.body;
+app.delete(
+  "/employees/:id",
+  authMiddleware,
+  roleMiddleware("admin"),
+  async (req, res) => {
+    const id = req.params.id;
 
-  try {
-    await pool.query(
-      "INSERT INTO employees (name, role, salary, projects) VALUES ($1, $2, $3, $4)",
-      [name, role, salary, projects]
-    );
+    try {
+      await pool.query(
+        "DELETE FROM employees WHERE id=$1",
+        [id]
+      );
 
-    res.json({
-      success: true,
-      message: "Employee added",
-    });
-  } catch (err) {
-    console.log(err);
+      res.json({
+        success: true,
+        message: "Employee deleted",
+      });
+    } catch (err) {
+      console.log(err);
 
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+      res.status(500).json({
+        success: false,
+      });
+    }
   }
-});
+);
 
-// UPDATE employee
-app.put( "/employees/:id", authMiddleware, roleMiddleware("admin", "hr"), async (req, res) => {
-  const { name, role, salary, projects } = req.body;
+app.get(
+  "/projects",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const result = await pool.query(
+        "SELECT * FROM projects ORDER BY id DESC"
+      );
 
-  const id = req.params.id;
+      res.json(result.rows);
+    } catch (err) {
+      console.log(err);
 
-  try {
-    await pool.query(
-      "UPDATE employees SET name=$1, role=$2, salary=$3, projects=$4 WHERE id=$5",
-      [name, role, salary, projects, id]
-    );
-
-    res.json({
-      success: true,
-      message: "Employee updated",
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+      res.status(500).json({
+        success: false,
+      });
+    }
   }
-});
+);
 
-// DELETE employee
-  app.delete("/employees/:id", authMiddleware, roleMiddleware("admin"), async (req, res) =>{
-   const id = req.params.id;
+app.post(
+  "/projects",
+  authMiddleware,
+  roleMiddleware("admin", "hr"),
+  async (req, res) => {
+    const { name, status, budget } =
+      req.body;
 
-  try {
-    await pool.query("DELETE FROM employees WHERE id=$1", [id]);
+    try {
+      await pool.query(
+        `
+        INSERT INTO projects
+        (name, status, budget)
+        VALUES ($1, $2, $3)
+        `,
+        [name, status, budget]
+      );
 
-    res.json({
-      success: true,
-      message: "Employee deleted",
-    });
-  } catch (err) {
-    console.log(err);
+      res.json({
+        success: true,
+        message: "Project added",
+      });
+    } catch (err) {
+      console.log(err);
 
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+      res.status(500).json({
+        success: false,
+      });
+    }
   }
-});
+);
 
-// ================= PROJECTS =================
+app.put(
+  "/projects/:id",
+  authMiddleware,
+  roleMiddleware("admin", "hr"),
+  async (req, res) => {
+    const id = req.params.id;
 
-app.get("/projects", authMiddleware, async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT * FROM projects ORDER BY id DESC"
-    );
+    const { name, status, budget } =
+      req.body;
 
-    res.json(result.rows);
-  } catch (err) {
-    console.log(err);
+    try {
+      await pool.query(
+        `
+        UPDATE projects
+        SET
+        name = $1,
+        status = $2,
+        budget = $3
+        WHERE id = $4
+        `,
+        [name, status, budget, id]
+      );
 
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+      res.json({
+        success: true,
+        message: "Project updated",
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+    }
   }
-});
+);
 
-app.post( "/projects", authMiddleware, roleMiddleware("admin"), async (req, res) => {
-  const { name, status, budget } = req.body;
+app.delete(
+  "/projects/:id",
+  authMiddleware,
+  roleMiddleware("admin", "hr"),
+  async (req, res) => {
+    const id = req.params.id;
 
-  try {
-    await pool.query(
-      "INSERT INTO projects (name, status, budget) VALUES ($1, $2, $3)",
-      [name, status, budget]
-    );
+    try {
+      await pool.query(
+        "DELETE FROM projects WHERE id=$1",
+        [id]
+      );
 
-    res.json({
-      success: true,
-      message: "Project added",
-    });
-  } catch (err) {
-    console.log(err);
+      res.json({
+        success: true,
+        message: "Project deleted",
+      });
+    } catch (err) {
+      console.log(err);
 
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+      res.status(500).json({
+        success: false,
+      });
+    }
   }
-});
+);
 
-app.put("/projects/:id", authMiddleware, roleMiddleware("admin"), async (req, res) => {
-  const { name, status, budget } = req.body;
+app.get(
+  "/dashboard",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const employees = await pool.query(
+        "SELECT COUNT(*) FROM employees"
+      );
 
-  const id = req.params.id;
+      const salary = await pool.query(
+        `
+        SELECT COALESCE(SUM(salary),0)
+        AS total
+        FROM employees
+        `
+      );
 
-  try {
-    await pool.query(
-      "UPDATE projects SET name=$1, status=$2, budget=$3 WHERE id=$4",
-      [name, status, budget, id]
-    );
+      const employeeProjects =
+        await pool.query(`
+        SELECT COALESCE(SUM(projects),0)
+        AS total
+        FROM employees
+      `);
 
-    res.json({
-      success: true,
-      message: "Project updated",
-    });
-  } catch (err) {
-    console.log(err);
+      const projectTable =
+        await pool.query(
+          "SELECT COUNT(*) FROM projects"
+        );
 
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+      const totalProjects =
+        Number(
+          employeeProjects.rows[0].total
+        ) +
+        Number(projectTable.rows[0].count);
+
+      res.json({
+        totalEmployees: Number(
+          employees.rows[0].count
+        ),
+        totalSalary: Number(
+          salary.rows[0].total
+        ),
+        totalProjects,
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+    }
   }
-});
+);
 
-app.delete( "/projects/:id", authMiddleware, roleMiddleware("admin"), async (req, res) => {
-  const id = req.params.id;
+app.get(
+  "/attendance",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const result = await pool.query(
+        `
+        SELECT *
+        FROM attendance
+        ORDER BY id DESC
+        `
+      );
 
-  try {
-    await pool.query("DELETE FROM projects WHERE id=$1", [id]);
+      res.json(result.rows);
+    } catch (err) {
+      console.log(err);
 
-    res.json({
-      success: true,
-      message: "Project deleted",
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+      res.status(500).json({
+        success: false,
+      });
+    }
   }
-});
+);
 
-// ================= CHATBOT =================
+app.post(
+  "/attendance/clock-in",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const { employee_id } = req.body;
 
-app.post("/chatbot", authMiddleware, async (req, res) => {
-  try {
-    const { message } = req.body;
+      const employee = await pool.query(
+        `
+        SELECT *
+        FROM employees
+        WHERE employee_code = $1
+        `,
+        [employee_id]
+      );
 
-    const employeesResult = await pool.query(
-      "SELECT COUNT(*) FROM employees"
-    );
+      if (employee.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Employee not found",
+        });
+      }
 
-    const projectsResult = await pool.query(
-      "SELECT COUNT(*) FROM projects"
-    );
+      const currentDate =
+        new Date().toLocaleDateString();
 
-    const salaryResult = await pool.query(
-      "SELECT COALESCE(SUM(salary),0) AS total FROM employees"
-    );
+      const currentTime =
+        new Date().toLocaleTimeString();
 
-    const employeeProjectsResult = await pool.query(
-      "SELECT COALESCE(SUM(projects),0) AS total FROM employees"
-    );
+      const already = await pool.query(
+        `
+        SELECT *
+        FROM attendance
+        WHERE employee_id = $1
+        AND date = $2
+        `,
+        [
+          employee.rows[0].employee_code,
+          currentDate,
+        ]
+      );
 
-    const totalProjects =
-      Number(projectsResult.rows[0].count) +
-      Number(employeeProjectsResult.rows[0].total);
+      if (already.rows.length > 0) {
+        return res.json({
+          success: false,
+          message:
+            "Already clocked in today",
+        });
+      }
 
-    const prompt = `
+      await pool.query(
+        `
+        INSERT INTO attendance
+        (
+          employee_id,
+          employee_name,
+          date,
+          clock_in,
+          status
+        )
+        VALUES ($1, $2, $3, $4, $5)
+        `,
+        [
+          employee.rows[0].employee_code,
+          employee.rows[0].name,
+          currentDate,
+          currentTime,
+          "Present",
+        ]
+      );
+
+      res.json({
+        success: true,
+        message: "Clock In successful",
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+        message: "Clock In failed",
+      });
+    }
+  }
+);
+
+app.post(
+  "/attendance/clock-out",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const { employee_id } = req.body;
+
+      const currentDate =
+        new Date().toLocaleDateString();
+
+      const currentTime =
+        new Date().toLocaleTimeString();
+
+      await pool.query(
+        `
+        UPDATE attendance
+        SET clock_out = $1
+        WHERE employee_id = $2
+        AND date = $3
+        `,
+        [
+          currentTime,
+          employee_id,
+          currentDate,
+        ]
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Clock Out successful",
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+        message: "Clock Out failed",
+      });
+    }
+  }
+);
+
+app.post(
+  "/leaves",
+  authMiddleware,
+  async (req, res) => {
+    const {
+      employee_id,
+      leave_type,
+      reason,
+      from_date,
+      to_date,
+    } = req.body;
+
+    try {
+      await pool.query(
+        `
+        INSERT INTO leaves
+        (
+          employee_id,
+          leave_type,
+          reason,
+          from_date,
+          to_date,
+          status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)
+        `,
+        [
+          employee_id,
+          leave_type,
+          reason,
+          from_date,
+          to_date,
+          "Pending",
+        ]
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Leave applied successfully",
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+    }
+  }
+);
+
+app.get(
+  "/leaves",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT
+        leaves.*,
+        employees.name
+        FROM leaves
+        JOIN employees
+        ON leaves.employee_id::text = employees.employee_code::text
+        ORDER BY leaves.id DESC
+      `);
+
+      res.json(result.rows);
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+    }
+  }
+);
+
+app.put(
+  "/leaves/:id/approve",
+  authMiddleware,
+  roleMiddleware("admin", "hr"),
+  async (req, res) => {
+    const id = req.params.id;
+
+    try {
+      await pool.query(
+        `
+        UPDATE leaves
+        SET status = 'Approved'
+        WHERE id = $1
+        `,
+        [id]
+      );
+
+      res.json({
+        success: true,
+        message: "Leave approved",
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+    }
+  }
+);
+
+app.put(
+  "/leaves/:id/reject",
+  authMiddleware,
+  roleMiddleware("admin", "hr"),
+  async (req, res) => {
+    const id = req.params.id;
+
+    try {
+      await pool.query(
+        `
+        UPDATE leaves
+        SET status = 'Rejected'
+        WHERE id = $1
+        `,
+        [id]
+      );
+
+      res.json({
+        success: true,
+        message: "Leave rejected",
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+    }
+  }
+);
+
+app.post(
+  "/chatbot",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const { message } = req.body;
+
+      const employeesResult =
+        await pool.query(
+          "SELECT COUNT(*) FROM employees"
+        );
+
+      const projectsResult =
+        await pool.query(
+          "SELECT COUNT(*) FROM projects"
+        );
+
+      const salaryResult =
+        await pool.query(`
+        SELECT COALESCE(SUM(salary),0)
+        AS total
+        FROM employees
+      `);
+
+      const employeeProjectsResult =
+        await pool.query(`
+        SELECT COALESCE(SUM(projects),0)
+        AS total
+        FROM employees
+      `);
+
+      const totalProjects =
+        Number(
+          projectsResult.rows[0].count
+        ) +
+        Number(
+          employeeProjectsResult.rows[0]
+            .total
+        );
+
+      const prompt = `
 You are an intelligent ERP AI assistant.
 
 ERP DATA:
@@ -447,288 +902,40 @@ User Question:
 ${message}
 `;
 
-    try {
-      const result = await model.generateContent(prompt);
+      try {
+        const result =
+          await model.generateContent(
+            prompt
+          );
 
-      const reply = result.response.text();
+        const reply =
+          result.response.text();
 
-      res.json({
-        success: true,
-        reply,
-      });
-    } catch (geminiError) {
-      console.log("Gemini Error:", geminiError.message);
+        res.json({
+          success: true,
+          reply,
+        });
+      } catch (geminiError) {
+        console.log(geminiError);
 
-      // Fallback response
-      res.json({
-        success: true,
-        reply: `
-Gemini AI is temporarily unavailable.
+        res.json({
+          success: true,
+          reply:
+            "AI temporarily unavailable",
+        });
+      }
+    } catch (err) {
+      console.log(err);
 
-ERP DATA:
-- Employees: ${employeesResult.rows[0].count}
-- Projects: ${totalProjects}
-- Salary: ₹${salaryResult.rows[0].total}
-
-Your Message:
-${message}
-        `,
-      });
-    }
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      reply: "Chatbot server error",
-    });
-  }
-});
-
-/* ================= DASHBOARD ================= */
-
-app.get("/dashboard", authMiddleware, async (req, res) => {
-  try {
-    const employees = await pool.query(
-      "SELECT COUNT(*) FROM employees"
-    );
-
-    const salary = await pool.query(
-      "SELECT COALESCE(SUM(salary), 0) AS total FROM employees"
-    );
-
-    const employeeProjects = await pool.query(
-      "SELECT COALESCE(SUM(projects), 0) AS total FROM employees"
-    );
-
-    const projectsTable = await pool.query(
-      "SELECT COUNT(*) FROM projects"
-    );
-
-    const totalProjects =
-      Number(employeeProjects.rows[0].total) +
-      Number(projectsTable.rows[0].count);
-
-    res.json({
-      totalEmployees: Number(employees.rows[0].count) || 0,
-      totalSalary: Number(salary.rows[0].total) || 0,
-      totalProjects: totalProjects || 0,
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Dashboard error",
-    });
-  }
-});
-// ================= ATTENDANCE =================
-
-// Clock In
-app.post("/attendance/clock-in", authMiddleware, async (req, res) => {
-  const { employee_id } = req.body;
-
-  try {
-    const existing = await pool.query(
-      "SELECT * FROM attendance WHERE employee_id=$1 AND date=CURRENT_DATE",
-      [employee_id]
-    );
-
-    if (existing.rows.length > 0) {
-      return res.json({
+      res.status(500).json({
         success: false,
-        message: "Already clocked in today",
       });
     }
-
-    await pool.query(
-      "INSERT INTO attendance (employee_id, clock_in, status) VALUES ($1, NOW(), 'Present')",
-      [employee_id]
-    );
-
-    res.json({
-      success: true,
-      message: "Clock In successful",
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Clock In error",
-    });
   }
-});
+);
 
-// Clock Out
-app.post("/attendance/clock-out", authMiddleware, async (req, res) => {
-  const { employee_id } = req.body;
-
-  try {
-    const result = await pool.query(
-      `
-      UPDATE attendance
-      SET clock_out = NOW()
-      WHERE employee_id=$1
-      AND date=CURRENT_DATE
-      RETURNING *
-      `,
-      [employee_id]
-    );
-
-    res.json({
-      success: true,
-      message: "Clock Out successful",
-      data: result.rows[0],
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Clock Out error",
-    });
-  }
-});
-
-// Get Attendance
-app.get("/attendance", authMiddleware, async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT 
-        attendance.*,
-        employees.name
-      FROM attendance
-      JOIN employees
-      ON attendance.employee_id = employees.id
-      ORDER BY attendance.date DESC
-    `);
-
-    res.json(result.rows);
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Attendance fetch error",
-    });
-  }
-});
-
-// ================= LEAVES =================
-
-// Apply Leave
-app.post("/leaves", authMiddleware, async (req, res) => {
-  const {
-    employee_id,
-    leave_type,
-    reason,
-    from_date,
-    to_date,
-  } = req.body;
-
-  try {
-    await pool.query(
-      `
-      INSERT INTO leaves
-      (employee_id, leave_type, reason, from_date, to_date)
-      VALUES ($1, $2, $3, $4, $5)
-      `,
-      [
-        employee_id,
-        leave_type,
-        reason,
-        from_date,
-        to_date,
-      ]
-    );
-
-    res.json({
-      success: true,
-      message: "Leave applied successfully",
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Leave apply error",
-    });
-  }
-});
-
-// Get Leaves
-app.get("/leaves", authMiddleware, async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT 
-        leaves.*,
-        employees.name
-      FROM leaves
-      JOIN employees
-      ON leaves.employee_id = employees.id
-      ORDER BY leaves.created_at DESC
-    `);
-
-    res.json(result.rows);
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Leave fetch error",
-    });
-  }
-});
-
-// Approve Leave
-app.put("/leave/approve/:id", authMiddleware, roleMiddleware("admin", "hr"), async (req, res) => {
-  const id = req.params.id;
-
-  try {
-    await pool.query(
-      "UPDATE leaves SET status='Approved' WHERE id=$1",
-      [id]
-    );
-
-    res.json({
-      success: true,
-      message: "Leave approved",
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Approval error",
-    });
-  }
-});
-
-// Reject Leave
-app.put("/leave/reject/:id", authMiddleware, roleMiddleware("admin", "hr"), async (req, res) => {
-  const id = req.params.id;
-
-  try {
-    await pool.query(
-      "UPDATE leaves SET status='Rejected' WHERE id=$1",
-      [id]
-    );
-
-    res.json({
-      success: true,
-      message: "Leave rejected",
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Reject error",
-    });
-  }
-});
 app.listen(5000, () => {
-  console.log("Server running on port 5000");
+  console.log(
+    "Server running on port 5000"
+  );
 });

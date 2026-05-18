@@ -13,6 +13,7 @@ export default function Employees() {
   const [employees, setEmployees] = useState([]);
   const [roles, setRoles] = useState([]);
 
+  const [employeeCode, setEmployeeCode] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [salary, setSalary] = useState("");
@@ -24,7 +25,6 @@ export default function Employees() {
 
   const getToken = () => localStorage.getItem("token");
 
-  // 🔐 FETCH EMPLOYEES
   const fetchEmployees = async () => {
     const token = getToken();
 
@@ -65,16 +65,18 @@ export default function Employees() {
     }
   };
 
-  // 🔐 FETCH ROLES
   const fetchRoles = async () => {
     const token = getToken();
 
     try {
-      const res = await fetch("http://localhost:5000/employees", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        "http://localhost:5000/employees",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       const data = await res.json();
 
@@ -92,7 +94,6 @@ export default function Employees() {
     }
   };
 
-  // 🚀 LOAD DATA
   useEffect(() => {
     fetchEmployees();
   }, [search, filterRole]);
@@ -101,8 +102,8 @@ export default function Employees() {
     fetchRoles();
   }, []);
 
-  // ✏️ EDIT
   const editEmployee = (emp) => {
+    setEmployeeCode(emp.employee_code);
     setName(emp.name);
     setRole(emp.role);
     setSalary(emp.salary);
@@ -115,9 +116,14 @@ export default function Employees() {
     });
   };
 
-  // ➕ ADD / UPDATE
   const addEmployee = async () => {
-    if (!name || !role || !salary || !projects) {
+    if (
+      !employeeCode ||
+      !name ||
+      !role ||
+      !salary ||
+      !projects
+    ) {
       toast.error("Please fill all fields");
       return;
     }
@@ -125,6 +131,7 @@ export default function Employees() {
     const token = getToken();
 
     const body = {
+      employee_code: employeeCode,
       name,
       role,
       salary,
@@ -133,33 +140,40 @@ export default function Employees() {
 
     try {
       if (editId) {
-        // ✏️ UPDATE
-        await fetch(`http://localhost:5000/employees/${editId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        });
+        await fetch(
+          `http://localhost:5000/employees/${editId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type":
+                "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(body),
+          }
+        );
 
-        toast.success("Employee Updated ✅");
+        toast.success("Employee Updated");
+
         setEditId(null);
       } else {
-        // ➕ ADD
-        await fetch("http://localhost:5000/employees", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        });
+        await fetch(
+          "http://localhost:5000/employees",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(body),
+          }
+        );
 
-        toast.success("Employee Added ✅");
+        toast.success("Employee Added");
       }
 
-      // 🧹 CLEAR FORM
+      setEmployeeCode("");
       setName("");
       setRole("");
       setSalary("");
@@ -173,19 +187,21 @@ export default function Employees() {
     }
   };
 
-  // ❌ DELETE
   const deleteEmployee = async (id) => {
     const token = getToken();
 
     try {
-      await fetch(`http://localhost:5000/employees/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await fetch(
+        `http://localhost:5000/employees/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      toast.success("Employee Deleted ✅");
+      toast.success("Employee Deleted");
 
       fetchEmployees();
       fetchRoles();
@@ -195,17 +211,22 @@ export default function Employees() {
     }
   };
 
-  // 🎨 ROLE COLORS
   const getRoleColor = (role) => {
-    if (role.toLowerCase().includes("manager")) {
+    if (
+      role.toLowerCase().includes("manager")
+    ) {
       return "bg-purple-100 text-purple-700";
     }
 
-    if (role.toLowerCase().includes("developer")) {
+    if (
+      role.toLowerCase().includes("developer")
+    ) {
       return "bg-blue-100 text-blue-700";
     }
 
-    if (role.toLowerCase().includes("designer")) {
+    if (
+      role.toLowerCase().includes("designer")
+    ) {
       return "bg-pink-100 text-pink-700";
     }
 
@@ -214,17 +235,17 @@ export default function Employees() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* ✅ SIDEBAR */}
-      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+      <Sidebar
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+      />
 
-      {/* ✅ CONTENT */}
       <div
         className={`flex-1 transition-all duration-300 ${
           isOpen ? "ml-64" : "ml-0"
         }`}
       >
         <div className="p-6 pt-20">
-          {/* 🔝 HEADER */}
           <div className="flex items-center gap-4 mb-6">
             {!isOpen && (
               <button
@@ -246,10 +267,11 @@ export default function Employees() {
             </div>
           </div>
 
-          {/* 📊 STATS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div className="bg-white p-6 rounded-2xl shadow">
-              <p className="text-gray-500">Total Employees</p>
+              <p className="text-gray-500">
+                Total Employees
+              </p>
 
               <h2 className="text-3xl font-bold mt-2">
                 {employees.length}
@@ -257,7 +279,9 @@ export default function Employees() {
             </div>
 
             <div className="bg-white p-6 rounded-2xl shadow">
-              <p className="text-gray-500">Roles</p>
+              <p className="text-gray-500">
+                Roles
+              </p>
 
               <h2 className="text-3xl font-bold mt-2">
                 {roles.length}
@@ -265,33 +289,43 @@ export default function Employees() {
             </div>
 
             <div className="bg-white p-6 rounded-2xl shadow">
-              <p className="text-gray-500">Total Projects</p>
+              <p className="text-gray-500">
+                Total Projects
+              </p>
 
               <h2 className="text-3xl font-bold mt-2">
                 {employees.reduce(
                   (total, emp) =>
-                    total + Number(emp.projects || 0),
+                    total +
+                    Number(
+                      emp.projects || 0
+                    ),
                   0
                 )}
               </h2>
             </div>
           </div>
 
-          {/* 🔍 SEARCH + FILTER */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <input
               className="border p-3 rounded-xl w-full bg-white"
               placeholder="Search employees..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
             />
 
             <select
               className="border p-3 rounded-xl bg-white"
               value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
+              onChange={(e) =>
+                setFilterRole(e.target.value)
+              }
             >
-              <option value="">All Roles</option>
+              <option value="">
+                All Roles
+              </option>
 
               {roles.map((r, i) => (
                 <option key={i} value={r}>
@@ -301,8 +335,8 @@ export default function Employees() {
             </select>
           </div>
 
-          {/* ➕ FORM */}
-          {(userRole === "admin" || userRole === "hr") && (
+          {(userRole === "admin" ||
+            userRole === "hr") && (
             <div className="bg-white p-6 rounded-2xl shadow mb-6">
               <h2 className="text-xl font-semibold mb-4">
                 {editId
@@ -310,33 +344,54 @@ export default function Employees() {
                   : "Add New Employee"}
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <input
+                  className="border p-3 rounded-xl"
+                  placeholder="Employee ID"
+                  value={employeeCode}
+                  onChange={(e) =>
+                    setEmployeeCode(
+                      e.target.value
+                    )
+                  }
+                />
+
                 <input
                   className="border p-3 rounded-xl"
                   placeholder="Employee Name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) =>
+                    setName(e.target.value)
+                  }
                 />
 
                 <input
                   className="border p-3 rounded-xl"
                   placeholder="Role"
                   value={role}
-                  onChange={(e) => setRole(e.target.value)}
+                  onChange={(e) =>
+                    setRole(e.target.value)
+                  }
                 />
 
                 <input
                   className="border p-3 rounded-xl"
                   placeholder="Salary"
                   value={salary}
-                  onChange={(e) => setSalary(e.target.value)}
+                  onChange={(e) =>
+                    setSalary(e.target.value)
+                  }
                 />
 
                 <input
                   className="border p-3 rounded-xl"
                   placeholder="Projects"
                   value={projects}
-                  onChange={(e) => setProjects(e.target.value)}
+                  onChange={(e) =>
+                    setProjects(
+                      e.target.value
+                    )
+                  }
                 />
               </div>
 
@@ -345,13 +400,16 @@ export default function Employees() {
                   onClick={addEmployee}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
                 >
-                  {editId ? "Update Employee" : "Add Employee"}
+                  {editId
+                    ? "Update Employee"
+                    : "Add Employee"}
                 </button>
 
                 {editId && (
                   <button
                     onClick={() => {
                       setEditId(null);
+                      setEmployeeCode("");
                       setName("");
                       setRole("");
                       setSalary("");
@@ -366,7 +424,6 @@ export default function Employees() {
             </div>
           )}
 
-          {/* 📋 TABLE */}
           <div className="bg-white rounded-2xl shadow overflow-hidden">
             <div className="p-5 border-b">
               <h2 className="text-xl font-semibold">
@@ -382,13 +439,32 @@ export default function Employees() {
               <table className="w-full text-left">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="p-4">Name</th>
-                    <th className="p-4">Role</th>
-                    <th className="p-4">Salary</th>
-                    <th className="p-4">Projects</th>
-                    {localStorage.getItem("role") === "admin" && (
-  <th className="p-4">Actions</th>
-)}
+                    <th className="p-4">
+                      Employee ID
+                    </th>
+
+                    <th className="p-4">
+                      Name
+                    </th>
+
+                    <th className="p-4">
+                      Role
+                    </th>
+
+                    <th className="p-4">
+                      Salary
+                    </th>
+
+                    <th className="p-4">
+                      Projects
+                    </th>
+
+                    {(userRole === "admin" ||
+                      userRole === "hr") && (
+                      <th className="p-4">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
 
@@ -398,6 +474,12 @@ export default function Employees() {
                       key={emp.id}
                       className="border-t hover:bg-gray-50 transition"
                     >
+                      <td className="p-4 font-semibold">
+                        {
+                          emp.employee_code
+                        }
+                      </td>
+
                       <td className="p-4 font-medium">
                         {emp.name}
                       </td>
@@ -420,27 +502,36 @@ export default function Employees() {
                         {emp.projects}
                       </td>
 
-                      {(userRole === "admin" || userRole === "hr") && (
+                      {(userRole === "admin" ||
+                        userRole ===
+                          "hr") && (
                         <td className="p-4">
                           <button
-                            onClick={() => editEmployee(emp)}
+                            onClick={() =>
+                              editEmployee(
+                                emp
+                              )
+                            }
                             className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mr-3 hover:bg-blue-200"
                           >
                             Edit
                           </button>
 
-                          {userRole === "admin" && (
+                          {userRole ===
+                            "admin" && (
                             <button
                               onClick={() =>
-                                deleteEmployee(emp.id)
+                                deleteEmployee(
+                                  emp.id
+                                )
                               }
                               className="bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200"
                             >
-                             Delete
-                           </button>
-                         )}
-                       </td>
-                     )}
+                              Delete
+                            </button>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

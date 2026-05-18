@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Bot } from "lucide-react";
 
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
@@ -78,9 +79,9 @@ export default function Chatbot() {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-5 right-5 w-16 h-16 rounded-full bg-blue-600 text-white text-xl font-bold shadow-2xl hover:bg-blue-700 transition-all duration-300 z-50"
+        className="fixed bottom-5 right-5 w-14 h-14 rounded-full bg-blue-600 text-white shadow-2xl hover:bg-blue-700 transition-all duration-300 z-50 flex items-center justify-center"
       >
-        AI
+        <Bot size={30} strokeWidth={2.5} />
       </button>
 
       {open && (
