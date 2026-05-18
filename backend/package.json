@@ -1,31 +1,23 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "description": "ERP Backend",
+  "main": "server.js",
   "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
   "dependencies": {
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
     "express": "^5.2.1",
-<<<<<<< HEAD
-<<<<<<< HEAD
-    "jsonwebtoken": "^9.0.3",
-    "pg": "^8.20.0",
-    "react-router-dom": "^7.14.2"
-=======
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.18.0",
     "pg": "^8.20.0"
->>>>>>> 5c33efc5fb15bba6ec1ff854a0157bbe6ec31db7
-=======
-    "jsonwebtoken": "^9.0.3",
-    "pg": "^8.20.0"
->>>>>>> 5140917ca530d3f14448efdecd5bde67f658efb5
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }
