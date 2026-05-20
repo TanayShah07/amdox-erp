@@ -164,13 +164,17 @@ export default function Leaves() {
           </h1>
 
           {/* APPLY LEAVE FORM */}
+
           <div className="bg-white p-6 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+
             <input
-              type="number"
-              placeholder="Employee ID"
+              type="text"
+              placeholder="Enter Employee ID (EMP001)"
               value={employeeId}
               onChange={(e) =>
-                setEmployeeId(e.target.value)
+                setEmployeeId(
+                  e.target.value.toUpperCase()
+                )
               }
               className="border p-3 rounded-lg"
             />
@@ -235,16 +239,22 @@ export default function Leaves() {
           </div>
 
           {/* LEAVES TABLE */}
+
           <div className="bg-white rounded-xl shadow overflow-auto">
             <table className="w-full">
               <thead className="bg-gray-100">
                 <tr>
+
                   <th className="p-4 text-left">
-                    Employee
+                    Employee ID
                   </th>
 
                   <th className="p-4 text-left">
-                    Type
+                    Employee Name
+                  </th>
+
+                  <th className="p-4 text-left">
+                    Leave Type
                   </th>
 
                   <th className="p-4 text-left">
@@ -268,6 +278,7 @@ export default function Leaves() {
                       Actions
                     </th>
                   )}
+
                 </tr>
               </thead>
 
@@ -277,8 +288,13 @@ export default function Leaves() {
                     key={item.id}
                     className="border-t hover:bg-gray-50"
                   >
+
+                    <td className="p-4 font-semibold">
+                      {item.employee_code || "-"}
+                    </td>
+
                     <td className="p-4">
-                      {item.name}
+                      {item.name || "-"}
                     </td>
 
                     <td className="p-4">
@@ -302,8 +318,7 @@ export default function Leaves() {
                         className={`px-3 py-1 rounded-full text-white ${
                           item.status === "Approved"
                             ? "bg-green-500"
-                            : item.status ===
-                              "Rejected"
+                            : item.status === "Rejected"
                             ? "bg-red-500"
                             : "bg-yellow-500"
                         }`}
@@ -314,6 +329,7 @@ export default function Leaves() {
 
                     {role === "admin" && (
                       <td className="p-4 flex gap-2">
+
                         <button
                           onClick={() =>
                             approveLeave(item.id)
@@ -331,12 +347,21 @@ export default function Leaves() {
                         >
                           Reject
                         </button>
+
                       </td>
                     )}
+
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            {leaves.length === 0 && (
+              <div className="p-10 text-center text-gray-500">
+                No Leave Records Found
+              </div>
+            )}
+
           </div>
         </div>
       </div>

@@ -429,7 +429,7 @@ export default function Employees() {
                   value={employeeCode}
                   onChange={(e) =>
                     setEmployeeCode(
-                      e.target.value
+                      e.target.value.toUpperCase()
                     )
                   }
                 />

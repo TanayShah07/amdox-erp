@@ -865,8 +865,6 @@ app.post(
         to_date,
       } = req.body;
 
-      // VALIDATION
-
       if (
         !employee_id ||
         !leave_type ||
@@ -886,7 +884,7 @@ app.post(
         `
         SELECT *
         FROM employees
-        WHERE id = $1
+        WHERE employee_code = $1
         `,
         [employee_id]
       );
@@ -914,7 +912,7 @@ app.post(
         VALUES ($1, $2, $3, $4, $5, $6)
         `,
         [
-          employee_id,
+          employeeCheck.rows[0].employee_code,
           leave_type,
           reason,
           from_date,
@@ -949,10 +947,11 @@ app.get(
       const result = await pool.query(`
         SELECT
         leaves.*,
-        employees.name
+        employees.name,
+        employees.employee_code
         FROM leaves
         JOIN employees
-        ON leaves.employee_id::text = employees.id::text
+        ON leaves.employee_id::text = employees.employee_code::text
         ORDER BY leaves.id DESC
       `);
 

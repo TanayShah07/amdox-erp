@@ -147,7 +147,9 @@ export default function Attendance() {
                 placeholder="Enter Employee ID"
                 value={employeeId}
                 onChange={(e) =>
-                  setEmployeeId(e.target.value)
+                  setEmployeeId(
+                    e.target.value.toUpperCase()
+                  )
                 }
                 className="border border-gray-300 p-3 rounded-lg flex-1 outline-none focus:ring-2 focus:ring-blue-400"
               />
