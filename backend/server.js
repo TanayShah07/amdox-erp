@@ -82,6 +82,7 @@ const roleMiddleware = (...roles) => {
 };
 
 app.post("/signup", async (req, res) => {
+
   const {
     name,
     email,
@@ -97,6 +98,8 @@ app.post("/signup", async (req, res) => {
   }
 
   try {
+
+    // CHECK USER EXISTS
     const existingUser = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
@@ -109,14 +112,22 @@ app.post("/signup", async (req, res) => {
       });
     }
 
+    // HASH PASSWORD
     const hashedPassword =
       await bcrypt.hash(password, 10);
 
-    await pool.query(
+    // INSERT USER
+    const newUser = await pool.query(
       `
       INSERT INTO users
-      (name, email, password, role)
+      (
+        name,
+        email,
+        password,
+        role
+      )
       VALUES ($1, $2, $3, $4)
+      RETURNING *
       `,
       [
         name,
@@ -126,13 +137,41 @@ app.post("/signup", async (req, res) => {
       ]
     );
 
-    const result = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
-      [email]
-    );
+    const user = newUser.rows[0];
 
-    const user = result.rows[0];
+    // AUTO CREATE EMPLOYEE
+    if (
+      role === "employee" ||
+      role === "hr"
+    ) {
 
+      const employeeCode =
+        "EMP" +
+        String(user.id).padStart(3, "0");
+
+      await pool.query(
+        `
+        INSERT INTO employees
+        (
+          employee_code,
+          name,
+          role,
+          salary,
+          projects
+        )
+        VALUES ($1, $2, $3, $4, $5)
+        `,
+        [
+          employeeCode,
+          name,
+          role,
+          0,
+          0,
+        ]
+      );
+    }
+
+    // JWT TOKEN
     const token = jwt.sign(
       {
         id: user.id,
@@ -150,13 +189,16 @@ app.post("/signup", async (req, res) => {
       token,
       role: user.role,
     });
+
   } catch (err) {
+
     console.log(err);
 
     res.status(500).json({
       success: false,
       message: "Signup failed",
     });
+
   }
 });
 
@@ -224,26 +266,40 @@ app.get(
     const { search, role } = req.query;
 
     try {
-      let query =
-        "SELECT * FROM employees WHERE 1=1";
+      let query = `
+        SELECT
+          id,
+          employee_code,
+          name,
+          role,
+          salary,
+          projects
+        FROM employees
+        WHERE 1=1
+      `;
 
       let values = [];
 
       if (search) {
         values.push(`%${search}%`);
 
-        query += ` AND name ILIKE $${
-          values.length
-        }`;
+        query += `
+          AND (
+            name ILIKE $${values.length}
+            OR employee_code ILIKE $${values.length}
+          )
+        `;
       }
 
       if (role) {
         values.push(role);
 
-        query += ` AND LOWER(role) = LOWER($${
-          values.length
-        })`;
+        query += `
+          AND LOWER(role) = LOWER($${values.length})
+        `;
       }
+
+      query += " ORDER BY id DESC";
 
       const result = await pool.query(
         query,
@@ -256,6 +312,7 @@ app.get(
 
       res.status(500).json({
         success: false,
+        message: "Failed to fetch employees",
       });
     }
   }
@@ -558,37 +615,86 @@ app.get(
   }
 );
 
+// ================= ATTENDANCE =================
+
+// GET ATTENDANCE
 app.get(
   "/attendance",
   authMiddleware,
   async (req, res) => {
     try {
-      const result = await pool.query(
-        `
-        SELECT *
-        FROM attendance
-        ORDER BY id DESC
-        `
-      );
+
+      let result;
+
+      // ADMIN & HR can see all attendance
+      if (
+        req.user.role === "admin" ||
+        req.user.role === "hr"
+      ) {
+
+        result = await pool.query(`
+          SELECT
+            id,
+            employee_id,
+            employee_name,
+            date,
+            clock_in,
+            clock_out,
+            status
+          FROM attendance
+          ORDER BY id DESC
+        `);
+
+      } else {
+
+        // EMPLOYEE can also see attendance records
+        result = await pool.query(`
+          SELECT
+            id,
+            employee_id,
+            employee_name,
+            date,
+            clock_in,
+            clock_out,
+            status
+          FROM attendance
+          ORDER BY id DESC
+        `);
+
+      }
 
       res.json(result.rows);
+
     } catch (err) {
+
       console.log(err);
 
       res.status(500).json({
         success: false,
+        message: "Failed to fetch attendance",
       });
+
     }
   }
 );
 
+// CLOCK IN
 app.post(
   "/attendance/clock-in",
   authMiddleware,
   async (req, res) => {
     try {
+
       const { employee_id } = req.body;
 
+      if (!employee_id) {
+        return res.status(400).json({
+          success: false,
+          message: "Employee ID required",
+        });
+      }
+
+      // FIND EMPLOYEE USING EMPLOYEE CODE
       const employee = await pool.query(
         `
         SELECT *
@@ -605,12 +711,13 @@ app.post(
         });
       }
 
-      const currentDate =
-        new Date().toLocaleDateString();
+      const emp = employee.rows[0];
 
-      const currentTime =
-        new Date().toLocaleTimeString();
+      const currentDate = new Date()
+        .toISOString()
+        .split("T")[0];
 
+      // CHECK ALREADY CLOCKED IN
       const already = await pool.query(
         `
         SELECT *
@@ -619,7 +726,7 @@ app.post(
         AND date = $2
         `,
         [
-          employee.rows[0].employee_code,
+          emp.employee_code,
           currentDate,
         ]
       );
@@ -627,11 +734,11 @@ app.post(
       if (already.rows.length > 0) {
         return res.json({
           success: false,
-          message:
-            "Already clocked in today",
+          message: "Already clocked in today",
         });
       }
 
+      // INSERT ATTENDANCE
       await pool.query(
         `
         INSERT INTO attendance
@@ -642,13 +749,12 @@ app.post(
           clock_in,
           status
         )
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES ($1, $2, $3, NOW(), $4)
         `,
         [
-          employee.rows[0].employee_code,
-          employee.rows[0].name,
+          emp.employee_code,
+          emp.name,
           currentDate,
-          currentTime,
           "Present",
         ]
       );
@@ -657,39 +763,70 @@ app.post(
         success: true,
         message: "Clock In successful",
       });
+
     } catch (err) {
+
       console.log(err);
 
       res.status(500).json({
         success: false,
         message: "Clock In failed",
       });
+
     }
   }
 );
 
+// CLOCK OUT
 app.post(
   "/attendance/clock-out",
   authMiddleware,
   async (req, res) => {
+
     try {
+
       const { employee_id } = req.body;
 
-      const currentDate =
-        new Date().toLocaleDateString();
+      if (!employee_id) {
+        return res.status(400).json({
+          success: false,
+          message: "Employee ID required",
+        });
+      }
 
-      const currentTime =
-        new Date().toLocaleTimeString();
+      const currentDate = new Date()
+        .toISOString()
+        .split("T")[0];
+
+      // CHECK ATTENDANCE
+      const attendance = await pool.query(
+        `
+        SELECT *
+        FROM attendance
+        WHERE employee_id = $1
+        AND date = $2
+        `,
+        [
+          employee_id,
+          currentDate,
+        ]
+      );
+
+      if (attendance.rows.length === 0) {
+        return res.json({
+          success: false,
+          message: "Employee not clocked in today",
+        });
+      }
 
       await pool.query(
         `
         UPDATE attendance
-        SET clock_out = $1
-        WHERE employee_id = $2
-        AND date = $3
+        SET clock_out = NOW()
+        WHERE employee_id = $1
+        AND date = $2
         `,
         [
-          currentTime,
           employee_id,
           currentDate,
         ]
@@ -697,16 +834,18 @@ app.post(
 
       res.json({
         success: true,
-        message:
-          "Clock Out successful",
+        message: "Clock Out successful",
       });
+
     } catch (err) {
+
       console.log(err);
 
       res.status(500).json({
         success: false,
         message: "Clock Out failed",
       });
+
     }
   }
 );
@@ -715,15 +854,52 @@ app.post(
   "/leaves",
   authMiddleware,
   async (req, res) => {
-    const {
-      employee_id,
-      leave_type,
-      reason,
-      from_date,
-      to_date,
-    } = req.body;
 
     try {
+
+      const {
+        employee_id,
+        leave_type,
+        reason,
+        from_date,
+        to_date,
+      } = req.body;
+
+      // VALIDATION
+
+      if (
+        !employee_id ||
+        !leave_type ||
+        !reason ||
+        !from_date ||
+        !to_date
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "All fields required",
+        });
+      }
+
+      // CHECK EMPLOYEE EXISTS
+
+      const employeeCheck = await pool.query(
+        `
+        SELECT *
+        FROM employees
+        WHERE id = $1
+        `,
+        [employee_id]
+      );
+
+      if (employeeCheck.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Employee not found",
+        });
+      }
+
+      // INSERT LEAVE
+
       await pool.query(
         `
         INSERT INTO leaves
@@ -749,15 +925,18 @@ app.post(
 
       res.json({
         success: true,
-        message:
-          "Leave applied successfully",
+        message: "Leave applied successfully",
       });
+
     } catch (err) {
+
       console.log(err);
 
       res.status(500).json({
         success: false,
+        message: "Leave apply failed",
       });
+
     }
   }
 );
@@ -773,7 +952,7 @@ app.get(
         employees.name
         FROM leaves
         JOIN employees
-        ON leaves.employee_id::text = employees.employee_code::text
+        ON leaves.employee_id::text = employees.id::text
         ORDER BY leaves.id DESC
       `);
 
@@ -934,8 +1113,76 @@ ${message}
   }
 );
 
+app.get(
+  "/profile",
+  authMiddleware,
+  async (req, res) => {
+    try {
+
+      // GET USER
+      const userResult = await pool.query(
+        `
+        SELECT
+          id,
+          name,
+          email,
+          role
+        FROM users
+        WHERE id = $1
+        `,
+        [req.user.id]
+      );
+
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      const user = userResult.rows[0];
+
+      // FIND EMPLOYEE USING NAME
+      const employeeResult = await pool.query(
+        `
+        SELECT employee_code
+        FROM employees
+        WHERE LOWER(name) = LOWER($1)
+        LIMIT 1
+        `,
+        [user.name]
+      );
+
+      let employeeCode = "";
+
+      if (employeeResult.rows.length > 0) {
+        employeeCode =
+          employeeResult.rows[0].employee_code;
+      }
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          employee_code: employeeCode,
+        },
+      });
+
+    } catch (err) {
+
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+        message: "Server error",
+      });
+
+    }
+  }
+);
 app.listen(5000, () => {
-  console.log(
-    "Server running on port 5000"
-  );
+  console.log("Server running on port 5000");
 });

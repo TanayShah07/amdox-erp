@@ -13,17 +13,28 @@ export default function Employees() {
   const [employees, setEmployees] = useState([]);
   const [roles, setRoles] = useState([]);
 
-  const [employeeCode, setEmployeeCode] = useState("");
+  const [employeeCode, setEmployeeCode] =
+    useState("");
+
   const [name, setName] = useState("");
+
   const [role, setRole] = useState("");
+
   const [salary, setSalary] = useState("");
-  const [projects, setProjects] = useState("");
+
+  const [projects, setProjects] =
+    useState("");
 
   const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState("");
-  const [editId, setEditId] = useState(null);
 
-  const getToken = () => localStorage.getItem("token");
+  const [filterRole, setFilterRole] =
+    useState("");
+
+  const [editId, setEditId] =
+    useState(null);
+
+  const getToken = () =>
+    localStorage.getItem("token");
 
   const fetchEmployees = async () => {
     const token = getToken();
@@ -36,8 +47,11 @@ export default function Employees() {
     try {
       const params = new URLSearchParams();
 
-      if (search) params.append("search", search);
-      if (filterRole) params.append("role", filterRole);
+      if (search)
+        params.append("search", search);
+
+      if (filterRole)
+        params.append("role", filterRole);
 
       const res = await fetch(
         `http://localhost:5000/employees?${params.toString()}`,
@@ -58,10 +72,15 @@ export default function Employees() {
 
       const data = await res.json();
 
-      setEmployees(Array.isArray(data) ? data : []);
+      setEmployees(
+        Array.isArray(data) ? data : []
+      );
     } catch (err) {
       console.error(err);
-      toast.error("Failed to fetch employees");
+
+      toast.error(
+        "Failed to fetch employees"
+      );
     }
   };
 
@@ -84,7 +103,9 @@ export default function Employees() {
         ...new Set(
           data
             .map((e) => e.role)
-            .filter((r) => r && r !== "")
+            .filter(
+              (r) => r && r !== ""
+            )
         ),
       ];
 
@@ -103,11 +124,18 @@ export default function Employees() {
   }, []);
 
   const editEmployee = (emp) => {
-    setEmployeeCode(emp.employee_code);
-    setName(emp.name);
-    setRole(emp.role);
-    setSalary(emp.salary);
-    setProjects(emp.projects);
+    setEmployeeCode(
+      emp.employee_code || ""
+    );
+
+    setName(emp.name || "");
+
+    setRole(emp.role || "");
+
+    setSalary(emp.salary || "");
+
+    setProjects(emp.projects || "");
+
     setEditId(emp.id);
 
     window.scrollTo({
@@ -124,7 +152,10 @@ export default function Employees() {
       !salary ||
       !projects
     ) {
-      toast.error("Please fill all fields");
+      toast.error(
+        "Please fill all fields"
+      );
+
       return;
     }
 
@@ -144,16 +175,21 @@ export default function Employees() {
           `http://localhost:5000/employees/${editId}`,
           {
             method: "PUT",
+
             headers: {
               "Content-Type":
                 "application/json",
+
               Authorization: `Bearer ${token}`,
             },
+
             body: JSON.stringify(body),
           }
         );
 
-        toast.success("Employee Updated");
+        toast.success(
+          "Employee Updated"
+        );
 
         setEditId(null);
       } else {
@@ -161,29 +197,42 @@ export default function Employees() {
           "http://localhost:5000/employees",
           {
             method: "POST",
+
             headers: {
               "Content-Type":
                 "application/json",
+
               Authorization: `Bearer ${token}`,
             },
+
             body: JSON.stringify(body),
           }
         );
 
-        toast.success("Employee Added");
+        toast.success(
+          "Employee Added"
+        );
       }
 
       setEmployeeCode("");
+
       setName("");
+
       setRole("");
+
       setSalary("");
+
       setProjects("");
 
       fetchEmployees();
+
       fetchRoles();
     } catch (err) {
       console.error(err);
-      toast.error("Something went wrong");
+
+      toast.error(
+        "Something went wrong"
+      );
     }
   };
 
@@ -195,42 +244,61 @@ export default function Employees() {
         `http://localhost:5000/employees/${id}`,
         {
           method: "DELETE",
+
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
 
-      toast.success("Employee Deleted");
+      toast.success(
+        "Employee Deleted"
+      );
 
       fetchEmployees();
+
       fetchRoles();
     } catch (err) {
       console.error(err);
+
       toast.error("Delete failed");
     }
   };
 
   const getRoleColor = (role) => {
     if (
-      role.toLowerCase().includes("manager")
+      role
+        ?.toLowerCase()
+        .includes("manager")
     ) {
       return "bg-purple-100 text-purple-700";
     }
 
     if (
-      role.toLowerCase().includes("developer")
+      role
+        ?.toLowerCase()
+        .includes("developer")
     ) {
       return "bg-blue-100 text-blue-700";
     }
 
     if (
-      role.toLowerCase().includes("designer")
+      role
+        ?.toLowerCase()
+        .includes("designer")
     ) {
       return "bg-pink-100 text-pink-700";
     }
 
-    return "bg-gray-100 text-gray-700";
+    if (
+      role
+        ?.toLowerCase()
+        .includes("hr")
+    ) {
+      return "bg-gray-100 text-gray-700";
+    }
+
+    return "bg-green-100 text-green-700";
   };
 
   return (
@@ -249,7 +317,9 @@ export default function Employees() {
           <div className="flex items-center gap-4 mb-6">
             {!isOpen && (
               <button
-                onClick={() => setIsOpen(true)}
+                onClick={() =>
+                  setIsOpen(true)
+                }
                 className="bg-white p-2 rounded shadow"
               >
                 ☰
@@ -262,7 +332,8 @@ export default function Employees() {
               </h1>
 
               <p className="text-gray-500">
-                Manage employees and roles
+                Manage employees and
+                roles
               </p>
             </div>
           </div>
@@ -312,7 +383,9 @@ export default function Employees() {
               placeholder="Search employees..."
               value={search}
               onChange={(e) =>
-                setSearch(e.target.value)
+                setSearch(
+                  e.target.value
+                )
               }
             />
 
@@ -320,7 +393,9 @@ export default function Employees() {
               className="border p-3 rounded-xl bg-white"
               value={filterRole}
               onChange={(e) =>
-                setFilterRole(e.target.value)
+                setFilterRole(
+                  e.target.value
+                )
               }
             >
               <option value="">
@@ -328,7 +403,10 @@ export default function Employees() {
               </option>
 
               {roles.map((r, i) => (
-                <option key={i} value={r}>
+                <option
+                  key={i}
+                  value={r}
+                >
                   {r}
                 </option>
               ))}
@@ -361,7 +439,9 @@ export default function Employees() {
                   placeholder="Employee Name"
                   value={name}
                   onChange={(e) =>
-                    setName(e.target.value)
+                    setName(
+                      e.target.value
+                    )
                   }
                 />
 
@@ -370,7 +450,9 @@ export default function Employees() {
                   placeholder="Role"
                   value={role}
                   onChange={(e) =>
-                    setRole(e.target.value)
+                    setRole(
+                      e.target.value
+                    )
                   }
                 />
 
@@ -379,7 +461,9 @@ export default function Employees() {
                   placeholder="Salary"
                   value={salary}
                   onChange={(e) =>
-                    setSalary(e.target.value)
+                    setSalary(
+                      e.target.value
+                    )
                   }
                 />
 
@@ -409,10 +493,15 @@ export default function Employees() {
                   <button
                     onClick={() => {
                       setEditId(null);
+
                       setEmployeeCode("");
+
                       setName("");
+
                       setRole("");
+
                       setSalary("");
+
                       setProjects("");
                     }}
                     className="bg-gray-300 hover:bg-gray-400 px-6 py-2 rounded-xl"
@@ -444,7 +533,7 @@ export default function Employees() {
                     </th>
 
                     <th className="p-4">
-                      Name
+                      Employee Name
                     </th>
 
                     <th className="p-4">
@@ -459,8 +548,10 @@ export default function Employees() {
                       Projects
                     </th>
 
-                    {(userRole === "admin" ||
-                      userRole === "hr") && (
+                    {(userRole ===
+                      "admin" ||
+                      userRole ===
+                        "hr") && (
                       <th className="p-4">
                         Actions
                       </th>
@@ -474,10 +565,9 @@ export default function Employees() {
                       key={emp.id}
                       className="border-t hover:bg-gray-50 transition"
                     >
-                      <td className="p-4 font-semibold">
-                        {
-                          emp.employee_code
-                        }
+                      <td className="p-4 font-semibold text-blue-700">
+                        {emp.employee_code ||
+                          "Not Assigned"}
                       </td>
 
                       <td className="p-4 font-medium">
@@ -502,7 +592,8 @@ export default function Employees() {
                         {emp.projects}
                       </td>
 
-                      {(userRole === "admin" ||
+                      {(userRole ===
+                        "admin" ||
                         userRole ===
                           "hr") && (
                         <td className="p-4">

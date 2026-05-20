@@ -8,6 +8,7 @@ export default function Profile() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [employeeCode, setEmployeeCode] = useState("");
 
   const fetchProfile = async () => {
     const token = localStorage.getItem("token");
@@ -32,8 +33,10 @@ export default function Profile() {
 
       const data = await res.json();
 
-      setName(data.name || "");
-      setEmail(data.email || "");
+     setName(data.user.name || "");
+     setEmail(data.user.email || "");
+     setEmployeeCode(data.user.employee_code || "");
+
     } catch {
       localStorage.removeItem("token");
       navigate("/");
@@ -103,6 +106,16 @@ export default function Profile() {
         <div className="mb-4">
           <p className="text-gray-500">Email</p>
           <p className="font-semibold">{email}</p>
+        </div>
+
+        <div className="mb-4">
+           <p className="text-gray-500">
+              Employee ID
+           </p>
+           
+           <p className="font-semibold">
+             {employeeCode || "Not Assigned"}
+           </p>
         </div>
 
         <input
