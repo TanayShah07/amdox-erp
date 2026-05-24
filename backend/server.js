@@ -211,6 +211,7 @@ app.post("/login", async (req, res) => {
       [email]
     );
 
+    
     if (result.rows.length === 0) {
       return res.json({
         success: false,
@@ -225,7 +226,7 @@ app.post("/login", async (req, res) => {
       user.password
     );
 
-    if (!isMatch) {
+       if (!isMatch) {
       return res.json({
         success: false,
         message: "Invalid credentials",
@@ -234,21 +235,21 @@ app.post("/login", async (req, res) => {
 
     const token = jwt.sign(
       {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
-      JWT_SECRET,
-      {
-        expiresIn: "1h",
-      }
-    );
+       id: user.id,
+       email: user.email,
+       role: user.role,
+     },
+     process.env.JWT_SECRET,
+     { expiresIn: "1d" }
+   );
 
-    res.json({
-      success: true,
-      token,
-      role: user.role,
-    });
+   return res.json({
+   success: true,
+   message: "Login successful",
+   role: user.role,
+   token,
+});
+
   } catch (err) {
     console.log(err);
 
@@ -1294,6 +1295,94 @@ app.get(
     }
   }
 );
+
+app.get(
+  "/payroll",
+  authMiddleware,
+  async (req, res) => {
+    try {
+
+      const result = await pool.query(`
+        SELECT *
+        FROM payroll
+        ORDER BY id DESC
+      `);
+
+      res.json(result.rows);
+
+    } catch (err) {
+
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+
+    }
+  }
+);
+
+app.post(
+  "/payroll",
+  authMiddleware,
+  roleMiddleware("admin", "hr"),
+  async (req, res) => {
+
+    try {
+
+      const {
+        employee_code,
+        employee_name,
+        basic_salary,
+        bonus,
+        deductions
+      } = req.body;
+
+      const net_salary =
+        Number(basic_salary) +
+        Number(bonus || 0) -
+        Number(deductions || 0);
+
+      await pool.query(
+        `
+        INSERT INTO payroll
+        (
+          employee_code,
+          employee_name,
+          basic_salary,
+          bonus,
+          deductions,
+          net_salary
+        )
+        VALUES ($1,$2,$3,$4,$5,$6)
+        `,
+        [
+          employee_code,
+          employee_name,
+          basic_salary,
+          bonus,
+          deductions,
+          net_salary
+        ]
+      );
+
+      res.json({
+        success: true,
+        message: "Payroll Added",
+      });
+
+    } catch (err) {
+
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+
+    }
+  }
+);
+
 app.listen(5000, () => {
   console.log("Server running on port 5000");
 });

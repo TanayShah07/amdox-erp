@@ -273,7 +273,8 @@ export default function Leaves() {
                     Status
                   </th>
 
-                  {role === "admin" && (
+                  {(role === "admin" ||
+                  role === "hr") && (
                     <th className="p-4 text-left">
                       Actions
                     </th>
@@ -327,7 +328,8 @@ export default function Leaves() {
                       </span>
                     </td>
 
-                    {role === "admin" && (
+                    {(role === "admin" ||
+                     role === "hr") && (
                       <td className="p-4 flex gap-2">
 
                         <button

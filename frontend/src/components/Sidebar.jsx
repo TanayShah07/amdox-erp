@@ -77,6 +77,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           >
             📝 Leaves
           </button>
+
+          <button
+            onClick={() => navigate("/payroll")}
+            className={menuClass("/payroll")}
+          >
+            💰 Payroll
+          </button>
+          
         </div>
 
         {/* Bottom Section */}

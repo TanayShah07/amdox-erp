@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import Projects from "./pages/Projects";
 import Attendance from "./pages/Attendance";
 import Leaves from "./pages/Leaves";
+import Payroll from "./pages/Payroll";
 
 const ProtectedRoute = ({
   children,
@@ -97,6 +98,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Leaves />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/payroll"
+          element={
+            <ProtectedRoute>
+              <Payroll />
             </ProtectedRoute>
           }
         />
