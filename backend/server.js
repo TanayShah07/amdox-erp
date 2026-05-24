@@ -562,18 +562,110 @@ app.get(
   "/projects",
   authMiddleware,
   async (req, res) => {
+
     try {
-      const result = await pool.query(
-        "SELECT * FROM projects ORDER BY id DESC"
-      );
+
+      const { employee_code } =
+        req.query;
+
+      let result;
+
+      if (
+        req.user.role ===
+          "employee" &&
+        employee_code
+      ) {
+
+        result = await pool.query(
+          `
+          SELECT
+            projects.id,
+            projects.name,
+            projects.status,
+            projects.budget,
+            projects.approval_status,
+            employees.name AS assigned_employee
+          FROM projects
+          LEFT JOIN assigned_projects
+          ON projects.id =
+          assigned_projects.project_id
+          LEFT JOIN employees
+          ON assigned_projects.employee_code =
+          employees.employee_code
+          WHERE assigned_projects.employee_code = $1
+          AND (
+            projects.approval_status IS NULL
+            OR
+            projects.approval_status != 'Approved'
+          )
+          ORDER BY projects.id DESC
+          `,
+          [employee_code]
+        );
+
+      } else {
+
+        result = await pool.query(
+          `
+          SELECT
+            projects.id,
+            projects.name,
+            projects.status,
+            projects.budget,
+            projects.approval_status,
+            employees.name AS assigned_employee
+          FROM projects
+          LEFT JOIN assigned_projects
+          ON projects.id =
+          assigned_projects.project_id
+          LEFT JOIN employees
+          ON assigned_projects.employee_code =
+          employees.employee_code
+          ORDER BY projects.id DESC
+          `
+        );
+
+      }
 
       res.json(result.rows);
+
     } catch (err) {
+
       console.log(err);
 
       res.status(500).json({
         success: false,
       });
+
+    }
+  }
+);
+
+app.get(
+  "/project-employees",
+  authMiddleware,
+  async (req, res) => {
+
+    try {
+
+      const result = await pool.query(`
+        SELECT
+          employee_code,
+          name
+        FROM employees
+        ORDER BY name ASC
+      `);
+
+      res.json(result.rows);
+
+    } catch (err) {
+
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+
     }
   }
 );
@@ -606,6 +698,190 @@ app.post(
       res.status(500).json({
         success: false,
       });
+    }
+  }
+);
+
+app.post(
+  "/assign-project",
+  authMiddleware,
+  roleMiddleware("admin", "hr"),
+  async (req, res) => {
+
+    try {
+
+      const {
+        employee_code,
+        project_id
+      } = req.body;
+
+      const alreadyAssigned =
+        await pool.query(
+          `
+          SELECT *
+          FROM assigned_projects
+          WHERE employee_code = $1
+          AND project_id = $2
+          `,
+          [
+            employee_code,
+            project_id
+          ]
+        );
+
+      if (
+        alreadyAssigned.rows.length > 0
+      ) {
+        return res.json({
+          success: false,
+          message:
+            "Already assigned",
+        });
+      }
+
+      await pool.query(
+        `
+        INSERT INTO assigned_projects
+        (
+          employee_code,
+          project_id
+        )
+        VALUES ($1, $2)
+        `,
+        [
+          employee_code,
+          project_id
+        ]
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Project assigned",
+      });
+
+    } catch (err) {
+
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+
+    }
+  }
+);
+
+app.put(
+  "/projects/:id/send-approval",
+  authMiddleware,
+  roleMiddleware("employee"),
+  async (req, res) => {
+
+    try {
+
+      const id = req.params.id;
+
+      await pool.query(
+        `
+        UPDATE projects
+        SET approval_status = 'Pending Approval'
+        WHERE id = $1
+        `,
+        [id]
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Project sent for approval",
+      });
+
+    } catch (err) {
+
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+
+    }
+  }
+);
+
+app.put(
+  "/projects/:id/approve",
+  authMiddleware,
+  roleMiddleware("admin", "hr"),
+  async (req, res) => {
+
+    try {
+
+      const id = req.params.id;
+
+      await pool.query(
+        `
+        UPDATE projects
+        SET
+          approval_status = 'Approved',
+          status = 'Completed'
+        WHERE id = $1
+        `,
+        [id]
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Project approved",
+      });
+
+    } catch (err) {
+
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+
+    }
+  }
+);
+
+app.put(
+  "/projects/:id/reject",
+  authMiddleware,
+  roleMiddleware("admin", "hr"),
+  async (req, res) => {
+
+    try {
+
+      const id = req.params.id;
+
+      await pool.query(
+        `
+        UPDATE projects
+        SET
+          approval_status = 'Rejected'
+        WHERE id = $1
+        `,
+        [id]
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Project rejected",
+      });
+
+    } catch (err) {
+
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+      });
+
     }
   }
 );

@@ -22,27 +22,49 @@ const ProtectedRoute = ({
   const token =
     localStorage.getItem("token");
 
-  const googleUser =
-    localStorage.getItem(
-      "googleUser"
-    );
-
-  return token || googleUser ? (
+  return token ? (
     children
   ) : (
     <Navigate to="/" />
   );
 };
 
+const AdminHrRoute = ({
+  children,
+}) => {
+  const token =
+    localStorage.getItem("token");
+
+  const role =
+    localStorage.getItem("role");
+
+  if (!token) {
+    return <Navigate to="/" />;
+  }
+
+  if (
+    role !== "admin" &&
+    role !== "hr"
+  ) {
+    return (
+      <Navigate to="/dashboard" />
+    );
+  }
+
+  return children;
+};
+
 function App() {
   return (
     <BrowserRouter>
+
       <Toaster
         position="top-right"
         reverseOrder={false}
       />
 
       <Routes>
+
         <Route
           path="/"
           element={<Auth />}
@@ -60,18 +82,9 @@ function App() {
         <Route
           path="/employees"
           element={
-            <ProtectedRoute>
+            <AdminHrRoute>
               <Employees />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
+            </AdminHrRoute>
           }
         />
 
@@ -81,6 +94,15 @@ function App() {
             <ProtectedRoute>
               <Projects />
             </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/payroll"
+          element={
+            <AdminHrRoute>
+              <Payroll />
+            </AdminHrRoute>
           }
         />
 
@@ -103,14 +125,16 @@ function App() {
         />
 
         <Route
-          path="/payroll"
+          path="/profile"
           element={
             <ProtectedRoute>
-              <Payroll />
+              <Profile />
             </ProtectedRoute>
           }
         />
+
       </Routes>
+
     </BrowserRouter>
   );
 }
