@@ -1,19 +1,96 @@
 import { useState } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import toast from "react-hot-toast";
+
+import {
+  signInWithPopup,
+} from "firebase/auth";
+
+import {
+  auth,
+  googleProvider,
+} from "../firebase";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
 
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("employee");
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
+
+  const [role, setRole] =
+    useState("employee");
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
 
   const navigate = useNavigate();
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(
+        auth,
+        googleProvider
+      );
+
+      const user = result.user;
+
+      const res = await fetch(
+        "http://localhost:5000/google-login",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            name: user.displayName,
+            email: user.email,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        localStorage.setItem(
+          "token",
+          data.token
+        );
+
+        localStorage.setItem(
+          "role",
+          data.role
+        );
+
+        toast.success(
+          "Google Login Successful"
+        );
+
+        navigate("/dashboard");
+      } else {
+        toast.error(
+          data.message ||
+            "Google Login Failed"
+        );
+      }
+    } catch (err) {
+      console.log(err);
+
+      toast.error(
+        "Google Login Failed"
+      );
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,9 +116,12 @@ export default function Auth() {
     try {
       const res = await fetch(url, {
         method: "POST",
+
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type":
+            "application/json",
         },
+
         body: JSON.stringify(body),
       });
 
@@ -51,11 +131,17 @@ export default function Auth() {
 
       if (data.success) {
         if (data.token) {
-          localStorage.setItem("token", data.token);
+          localStorage.setItem(
+            "token",
+            data.token
+          );
         }
 
         if (data.role) {
-          localStorage.setItem("role", data.role);
+          localStorage.setItem(
+            "role",
+            data.role
+          );
         }
 
         toast.success(
@@ -66,7 +152,10 @@ export default function Auth() {
 
         navigate("/dashboard");
       } else {
-        toast.error(data.message || "Invalid credentials");
+        toast.error(
+          data.message ||
+            "Invalid credentials"
+        );
       }
     } catch (err) {
       console.log(err);
@@ -84,7 +173,9 @@ export default function Auth() {
         className="bg-white p-8 rounded-2xl shadow-lg w-96"
       >
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
-          {isLogin ? "Login" : "Sign Up"}
+          {isLogin
+            ? "Login"
+            : "Sign Up"}
         </h2>
 
         {!isLogin && (
@@ -95,12 +186,16 @@ export default function Auth() {
               className="w-full p-3 border mb-3 rounded-lg"
               placeholder="Name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) =>
+                setName(e.target.value)
+              }
             />
 
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value)}
+              onChange={(e) =>
+                setRole(e.target.value)
+              }
               className="w-full p-3 border mb-3 rounded-lg"
             >
               <option value="employee">
@@ -121,28 +216,40 @@ export default function Auth() {
           className="w-full p-3 border mb-3 rounded-lg"
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) =>
+            setEmail(e.target.value)
+          }
         />
 
         <div className="relative">
           <input
-            type={showPassword ? "text" : "password"}
+            type={
+              showPassword
+                ? "text"
+                : "password"
+            }
             required
             className="w-full p-3 border mb-4 rounded-lg"
             placeholder="Password"
             value={password}
             onChange={(e) =>
-              setPassword(e.target.value)
+              setPassword(
+                e.target.value
+              )
             }
           />
 
           <span
             onClick={() =>
-              setShowPassword(!showPassword)
+              setShowPassword(
+                !showPassword
+              )
             }
             className="absolute right-3 top-3 cursor-pointer text-gray-500"
           >
-            {showPassword ? "Hide" : "Show"}
+            {showPassword
+              ? "Hide"
+              : "Show"}
           </span>
         </div>
 
@@ -158,9 +265,25 @@ export default function Auth() {
             : "Sign Up"}
         </button>
 
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="w-full mt-3 border border-gray-300 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-100 transition"
+        >
+          <img
+            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+            alt="google"
+            className="w-5 h-5"
+          />
+
+          Sign in with Google
+        </button>
+
         <p
           className="text-sm text-center mt-4 cursor-pointer text-blue-600 hover:underline"
-          onClick={() => setIsLogin(!isLogin)}
+          onClick={() =>
+            setIsLogin(!isLogin)
+          }
         >
           {isLogin
             ? "Don't have an account? Sign Up"

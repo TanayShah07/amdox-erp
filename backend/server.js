@@ -259,6 +259,118 @@ app.post("/login", async (req, res) => {
   }
 });
 
+app.post(
+  "/google-login",
+  async (req, res) => {
+    try {
+      const { name, email } =
+        req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email required",
+        });
+      }
+
+      let userResult =
+        await pool.query(
+          `
+        SELECT *
+        FROM users
+        WHERE email = $1
+        `,
+          [email]
+        );
+
+      let user;
+
+      if (
+        userResult.rows.length === 0
+      ) {
+        const newUser =
+          await pool.query(
+            `
+          INSERT INTO users
+          (
+            name,
+            email,
+            password,
+            role
+          )
+          VALUES ($1, $2, $3, $4)
+          RETURNING *
+          `,
+            [
+              name,
+              email,
+              "google-auth",
+              "employee",
+            ]
+          );
+
+        user = newUser.rows[0];
+
+        const employeeCode =
+          "EMP" +
+          String(user.id).padStart(
+            3,
+            "0"
+          );
+
+        await pool.query(
+          `
+          INSERT INTO employees
+          (
+            employee_code,
+            name,
+            role,
+            salary,
+            projects
+          )
+          VALUES ($1, $2, $3, $4, $5)
+          `,
+          [
+            employeeCode,
+            name,
+            "employee",
+            0,
+            0,
+          ]
+        );
+      } else {
+        user = userResult.rows[0];
+      }
+
+      const token = jwt.sign(
+        {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        },
+        JWT_SECRET,
+        {
+          expiresIn: "1h",
+        }
+      );
+
+      res.json({
+        success: true,
+        token,
+        role: user.role,
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Google login failed",
+      });
+    }
+  }
+);
+
 app.get(
   "/employees",
   authMiddleware,

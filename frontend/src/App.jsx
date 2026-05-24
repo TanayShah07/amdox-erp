@@ -1,4 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
 import { Toaster } from "react-hot-toast";
 
 import Auth from "./pages/Auth";
@@ -9,20 +15,37 @@ import Projects from "./pages/Projects";
 import Attendance from "./pages/Attendance";
 import Leaves from "./pages/Leaves";
 
-const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("token");
-  return token ? children : <Navigate to="/" />;
+const ProtectedRoute = ({
+  children,
+}) => {
+  const token =
+    localStorage.getItem("token");
+
+  const googleUser =
+    localStorage.getItem(
+      "googleUser"
+    );
+
+  return token || googleUser ? (
+    children
+  ) : (
+    <Navigate to="/" />
+  );
 };
 
 function App() {
   return (
     <BrowserRouter>
-      {/* ✅ TOAST NOTIFICATIONS */}
-      {/* ✅ TOAST */}
-      <Toaster position="top-right" reverseOrder={false} />
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+      />
 
       <Routes>
-        <Route path="/" element={<Auth />} />
+        <Route
+          path="/"
+          element={<Auth />}
+        />
 
         <Route
           path="/dashboard"
@@ -59,20 +82,24 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
-          path="/attendance" 
+          path="/attendance"
           element={
-            <Attendance />
-          } 
+            <ProtectedRoute>
+              <Attendance />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="/leaves"
           element={
-            <Leaves />
-          } 
+            <ProtectedRoute>
+              <Leaves />
+            </ProtectedRoute>
+          }
         />
-
       </Routes>
     </BrowserRouter>
   );
