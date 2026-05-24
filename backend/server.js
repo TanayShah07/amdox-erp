@@ -211,6 +211,7 @@ app.post("/login", async (req, res) => {
       [email]
     );
 
+    
     if (result.rows.length === 0) {
       return res.json({
         success: false,
@@ -225,7 +226,7 @@ app.post("/login", async (req, res) => {
       user.password
     );
 
-    if (!isMatch) {
+       if (!isMatch) {
       return res.json({
         success: false,
         message: "Invalid credentials",
@@ -234,21 +235,21 @@ app.post("/login", async (req, res) => {
 
     const token = jwt.sign(
       {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
-      JWT_SECRET,
-      {
-        expiresIn: "1h",
-      }
-    );
+       id: user.id,
+       email: user.email,
+       role: user.role,
+     },
+     process.env.JWT_SECRET,
+     { expiresIn: "1d" }
+   );
 
-    res.json({
-      success: true,
-      token,
-      role: user.role,
-    });
+   return res.json({
+   success: true,
+   message: "Login successful",
+   role: user.role,
+   token,
+});
+
   } catch (err) {
     console.log(err);
 
