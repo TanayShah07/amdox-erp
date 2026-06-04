@@ -1,187 +1,72 @@
-import {
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-import toast from "react-hot-toast";
-
-export default function Sidebar({
-  isOpen,
-  setIsOpen,
-}) {
-  const navigate = useNavigate();
-
+export default function Sidebar() {
   const location = useLocation();
 
-  const role =
-    localStorage.getItem("role");
+  const menus = [
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+    },
+    {
+      name: "Employees",
+      path: "/employees",
+    },
+    {
+      name: "Attendance",
+      path: "/attendance",
+    },
+    {
+      name: "Leaves",
+      path: "/leaves",
+    },
+    {
+      name: "Payroll",
+      path: "/payroll",
+    },
+    {
+      name: "Profile",
+      path: "/profile",
+    },
+    {
+      name: "Projects",
+      path: "/projects",
+    },
+  ];
 
   const logout = () => {
-    localStorage.clear();
-
-    toast.success(
-      "Logged out successfully"
-    );
-
-    window.location.replace("/");
+    localStorage.removeItem("token");
+    window.location.href = "/";
   };
 
-  const menuClass = (path) =>
-    `mb-3 text-left px-3 py-2 rounded transition ${
-      location.pathname === path
-        ? "bg-blue-600 text-white"
-        : "hover:bg-gray-700"
-    }`;
-
   return (
-    <>
-      <div
-        className={`fixed top-0 left-0 h-full w-64 bg-gray-900 text-white p-6 flex flex-col z-40 transform transition-transform duration-300 ${
-          isOpen
-            ? "translate-x-0"
-            : "-translate-x-full"
-        }`}
-      >
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold">
-            ERP System
-          </h2>
+    <div className="hidden md:block w-64 bg-gray-900 text-white min-h-screen p-5 fixed left-0 top-0">
+      <h1 className="text-3xl font-bold mb-10">
+        ERP System
+      </h1>
 
-          <button
-            onClick={() =>
-              setIsOpen(false)
-            }
-            className="text-xl"
+      <div className="flex flex-col gap-3">
+        {menus.map((menu, index) => (
+          <Link
+            key={index}
+            to={menu.path}
+            className={`px-4 py-3 rounded-lg transition-all duration-200 ${
+              location.pathname === menu.path
+                ? "bg-blue-600"
+                : "hover:bg-gray-700"
+            }`}
           >
-            ✕
-          </button>
-        </div>
+            {menu.name}
+          </Link>
+        ))}
 
-        <div className="flex flex-col">
-
-          <button
-            onClick={() =>
-              navigate("/dashboard")
-            }
-            className={menuClass(
-              "/dashboard"
-            )}
-          >
-            Dashboard
-          </button>
-
-          {(role === "admin" ||
-            role === "hr") && (
-            <>
-              <button
-                onClick={() =>
-                  navigate(
-                    "/employees"
-                  )
-                }
-                className={menuClass(
-                  "/employees"
-                )}
-              >
-                Employees
-              </button>
-
-              <button
-                onClick={() =>
-                  navigate(
-                    "/projects"
-                  )
-                }
-                className={menuClass(
-                  "/projects"
-                )}
-              >
-                Projects
-              </button>
-
-              <button
-                onClick={() =>
-                  navigate(
-                    "/payroll"
-                  )
-                }
-                className={menuClass(
-                  "/payroll"
-                )}
-              >
-                Payroll
-              </button>
-            </>
-          )}
-
-          {role === "employee" && (
-            <button
-              onClick={() =>
-                navigate("/projects")
-              }
-              className={menuClass(
-                "/projects"
-              )}
-            >
-              My Projects
-            </button>
-          )}
-
-          <button
-            onClick={() =>
-              navigate(
-                "/attendance"
-              )
-            }
-            className={menuClass(
-              "/attendance"
-            )}
-          >
-            Attendance
-          </button>
-
-          <button
-            onClick={() =>
-              navigate("/leaves")
-            }
-            className={menuClass(
-              "/leaves"
-            )}
-          >
-            Leaves
-          </button>
-
-        </div>
-
-        <div className="mt-auto">
-
-          <button
-            onClick={() =>
-              navigate("/profile")
-            }
-            className="w-full text-left px-3 py-2 rounded hover:bg-gray-700 transition"
-          >
-            Profile
-          </button>
-
-          <button
-            onClick={logout}
-            className="w-full text-left px-3 py-2 rounded hover:bg-red-600 text-red-400 hover:text-white mt-2 transition"
-          >
-            Logout
-          </button>
-
-        </div>
+        <button
+          onClick={logout}
+          className="mt-6 bg-red-500 hover:bg-red-600 px-4 py-3 rounded-lg"
+        >
+          Logout
+        </button>
       </div>
-
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-30 z-30"
-          onClick={() =>
-            setIsOpen(false)
-          }
-        />
-      )}
-    </>
+    </div>
   );
 }

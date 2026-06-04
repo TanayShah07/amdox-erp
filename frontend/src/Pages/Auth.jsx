@@ -14,25 +14,19 @@ import {
 } from "../firebase";
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
 
-  const [name, setName] = useState("");
+const [name, setName] = useState("");
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
 
-  const [email, setEmail] = useState("");
+const [role, setRole] = useState("employee");
 
-  const [password, setPassword] = useState("");
+const [showPassword, setShowPassword] = useState(false);
+const [loading, setLoading] = useState(false);
 
-  const [role, setRole] =
-    useState("employee");
+const [isLogin, setIsLogin] = useState(true);
 
-  const [showPassword, setShowPassword] =
-    useState(false);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const navigate = useNavigate();
-
+const navigate = useNavigate();
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(
@@ -61,7 +55,7 @@ export default function Auth() {
 
       const data = await res.json();
 
-      if (data.success) {
+      if (data.token) {
         localStorage.setItem(
           "token",
           data.token
@@ -84,22 +78,23 @@ export default function Auth() {
         );
       }
     } catch (err) {
-      console.log(err);
-
-      toast.error(
-        "Google Login Failed"
-      );
-    }
+  console.log(err);
+  toast.error("Google Login Failed");
+}
   };
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
+
+    if (loading) return;
 
     setLoading(true);
 
+    // Correct Backend URLs
     const url = isLogin
-      ? "http://localhost:5000/login"
-      : "http://localhost:5000/signup";
+      ? "http://localhost:5000/api/auth/login"
+      : "http://localhost:5000/api/auth/signup";
 
     const body = isLogin
       ? {
@@ -114,81 +109,72 @@ export default function Auth() {
         };
 
     try {
-      const res = await fetch(url, {
-        method: "POST",
 
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 
-        body: JSON.stringify(body),
-      });
+  const data = await res.json();
 
-      const data = await res.json();
+  if (res.ok && data.token) {
 
-      console.log("RESPONSE:", data);
+    localStorage.setItem("token", data.token);
 
-      if (data.success) {
-        if (data.token) {
-          localStorage.setItem(
-            "token",
-            data.token
-          );
-        }
-
-        if (data.role) {
-          localStorage.setItem(
-            "role",
-            data.role
-          );
-        }
-
-        toast.success(
-          isLogin
-            ? "Login successful"
-            : "Signup successful"
-        );
-
-        navigate("/dashboard");
-      } else {
-        toast.error(
-          data.message ||
-            "Invalid credentials"
-        );
-      }
-    } catch (err) {
-      console.log(err);
-
-      toast.error("Server error");
+    if (data.role) {
+      localStorage.setItem("role", data.role);
     }
 
-    setLoading(false);
+    toast.success(
+      isLogin ? "Login successful" : "Signup successful"
+    );
+
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 500);
+
+  } else {
+    toast.error(data.message || "Invalid credentials");
+  }
+
+} catch (err) {
+  console.log(err);
+  toast.error("Server request failed");
+} finally {
+  setLoading(false);
+}
+
   };
 
   return (
+
     <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-gray-200">
+
       <form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-2xl shadow-lg w-96"
       >
+
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
-          {isLogin
-            ? "Login"
-            : "Sign Up"}
-        </h2>
+  {isLogin ? "Login" : "Sign Up"}
+</h2>
 
         {!isLogin && (
+
           <>
+
             <input
               type="text"
               required
-              className="w-full p-3 border mb-3 rounded-lg"
               placeholder="Name"
               value={name}
               onChange={(e) =>
                 setName(e.target.value)
               }
+              className="w-full p-3 border mb-3 rounded-lg"
             />
 
             <select
@@ -198,6 +184,7 @@ export default function Auth() {
               }
               className="w-full p-3 border mb-3 rounded-lg"
             >
+
               <option value="employee">
                 Employee
               </option>
@@ -205,23 +192,27 @@ export default function Auth() {
               <option value="hr">
                 HR
               </option>
+
             </select>
+
           </>
+
         )}
 
         <input
           type="email"
           required
           autoFocus
-          className="w-full p-3 border mb-3 rounded-lg"
           placeholder="Email"
           value={email}
           onChange={(e) =>
             setEmail(e.target.value)
           }
+          className="w-full p-3 border mb-3 rounded-lg"
         />
 
         <div className="relative">
+
           <input
             type={
               showPassword
@@ -229,7 +220,6 @@ export default function Auth() {
                 : "password"
             }
             required
-            className="w-full p-3 border mb-4 rounded-lg"
             placeholder="Password"
             value={password}
             onChange={(e) =>
@@ -237,6 +227,7 @@ export default function Auth() {
                 e.target.value
               )
             }
+            className="w-full p-3 border mb-4 rounded-lg"
           />
 
           <span
@@ -250,19 +241,21 @@ export default function Auth() {
             {showPassword
               ? "Hide"
               : "Show"}
+
+            
+
           </span>
+
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg disabled:opacity-50"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition-all duration-200 disabled:opacity-50"
         >
-          {loading
-            ? "Please wait..."
-            : isLogin
-            ? "Login"
-            : "Sign Up"}
+
+         {loading ? "Loading..." : isLogin ? "Login" : "Sign Up"}
+
         </button>
 
         <button
@@ -279,17 +272,19 @@ export default function Auth() {
           Sign in with Google
         </button>
 
-        <p
-          className="text-sm text-center mt-4 cursor-pointer text-blue-600 hover:underline"
-          onClick={() =>
-            setIsLogin(!isLogin)
-          }
-        >
+       <p
+  className="text-sm text-center mt-4 cursor-pointer text-blue-600 hover:underline"
+  onClick={() => setIsLogin(!isLogin)}
+>
+
           {isLogin
             ? "Don't have an account? Sign Up"
             : "Already have an account? Login"}
+
         </p>
+
       </form>
+
     </div>
   );
 }

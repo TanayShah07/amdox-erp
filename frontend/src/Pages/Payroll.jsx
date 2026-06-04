@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import Sidebar from "../components/Sidebar";
 
 export default function Payroll() {
 

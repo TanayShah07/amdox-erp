@@ -1,11 +1,7 @@
 import { useState, useEffect } from "react";
-import Sidebar from "../components/Sidebar";
 import toast from "react-hot-toast";
-
 const Projects = () => {
-  const [isOpen, setIsOpen] =
-    useState(true);
-
+  
   const [name, setName] =
     useState("");
 
@@ -44,8 +40,7 @@ const Projects = () => {
 
         const profileRes =
           await fetch(
-            "http://localhost:5000/profile",
-            {
+"http://localhost:5000/api/user/profile",           {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -452,35 +447,17 @@ const Projects = () => {
     };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+  <div className="flex min-h-screen bg-gray-100">
+    
 
-      <Sidebar
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-      />
-
-      <div
-        className={`flex-1 transition-all duration-300 ${
-          isOpen
-            ? "ml-64"
-            : "ml-0"
-        }`}
-      >
-
+    <div className="flex-1">
+      <div className="w-full">
         <div className="p-6 pt-20">
 
           <div className="flex items-center gap-4 mb-6">
 
-            {!isOpen && (
-              <button
-                onClick={() =>
-                  setIsOpen(true)
-                }
-                className="bg-white p-2 rounded shadow"
-              >
-                ☰
-              </button>
-            )}
+          
+            
 
             <div>
 
@@ -848,6 +825,7 @@ const Projects = () => {
               </table>
 
             )}
+            </div>
 
           </div>
 

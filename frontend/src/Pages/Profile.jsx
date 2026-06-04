@@ -31,20 +31,25 @@ export default function Profile() {
     }
 
     try {
-      const res = await fetch(
-        "http://localhost:5000/profile",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+     const res = await fetch(
+  "http://localhost:5000/api/user/profile",
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
 
-      if (!res.ok) {
-        localStorage.removeItem("token");
-        navigate("/");
-        return;
-      }
+     if (res.status === 401) {
+  localStorage.removeItem("token");
+  navigate("/");
+  return;
+}
+
+if (!res.ok) {
+  console.error("Server error:", res.status);
+  return;
+}
 
       const data = await res.json();
 

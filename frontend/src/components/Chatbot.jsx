@@ -1,166 +1,198 @@
-import { useEffect, useRef, useState } from "react";
-import { Bot } from "lucide-react";
+import { useState } from "react";
 
-export default function Chatbot() {
-  const [open, setOpen] = useState(false);
+export default function ChatBot() {
+  const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [chat, setChat] = useState([]);
 
-  const [messages, setMessages] = useState([
-    {
-      sender: "ai",
-      text: "Hello, I am your AI ERP Assistant.",
-    },
-  ]);
-
-  const messagesEndRef = useRef(null);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
-  }, [messages, loading]);
-
+  // SEND MESSAGE FUNCTION
   const sendMessage = async () => {
-    if (!message.trim() || loading) return;
+    if (!message.trim()) return;
 
-    const token = localStorage.getItem("token");
+    const userMsg = message;
 
-    const currentMessage = message;
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        sender: "user",
-        text: currentMessage,
-      },
-    ]);
-
+    setChat((prev) => [...prev, { type: "user", text: userMsg }]);
     setMessage("");
-    setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/chatbot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          message: currentMessage,
-        }),
-      });
+      const res = await fetch(
+        "http://localhost:5000/api/chatbot/message",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userMsg }),
+        }
+      );
 
       const data = await res.json();
 
-      setMessages((prev) => [
+      setChat((prev) => [
         ...prev,
-        {
-          sender: "ai",
-          text: data.reply || "No response",
-        },
+        { type: "bot", text: data.reply },
       ]);
     } catch (err) {
-      console.log(err);
-
-      setMessages((prev) => [
+      setChat((prev) => [
         ...prev,
-        {
-          sender: "ai",
-          text: "Server error",
-        },
+        { type: "bot", text: "Server error" },
       ]);
     }
+  };
 
-    setLoading(false);
+  // ENTER KEY SUPPORT
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
   };
 
   return (
     <>
-      <button
-        onClick={() => setOpen(!open)}
-        className="fixed bottom-5 right-5 w-14 h-14 rounded-full bg-blue-600 text-white shadow-2xl hover:bg-blue-700 transition-all duration-300 z-50 flex items-center justify-center"
+      {/* ================= FLOATING ICON ================= */}
+      <div
+        onClick={() => setIsOpen(true)}
+        style={{
+          position: "fixed",
+          bottom: 25,
+          right: 25,
+          width: 62,
+          height: 62,
+          borderRadius: "50%",
+          background: "linear-gradient(135deg, #2563eb, #1e40af)",
+          color: "white",
+          display: isOpen ? "none" : "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 26,
+          cursor: "pointer",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
+          transition: "0.3s",
+        }}
+        title="Chat with AI"
       >
-        <Bot size={30} strokeWidth={2.5} />
-      </button>
+        {/* PROFESSIONAL CHAT ICON (SVG) */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+        </svg>
+      </div>
 
-      {open && (
-        <div className="fixed bottom-24 right-5 w-[380px] h-[600px] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden z-50 border border-gray-200">
-          <div className="bg-blue-600 text-white px-5 py-4 flex justify-between items-center">
-            <div>
-              <h2 className="font-semibold text-lg">
-                AI ERP Assistant
-              </h2>
-
-              <p className="text-xs opacity-80">
-                Powered by Gemini AI
-              </p>
-            </div>
+      {/* ================= CHAT WINDOW ================= */}
+      {isOpen && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 25,
+            right: 25,
+            width: 340,
+            height: 440,
+            background: "#fff",
+            borderRadius: 16,
+            boxShadow: "0 12px 35px rgba(0,0,0,0.25)",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          {/* HEADER */}
+          <div
+            style={{
+              background: "#2563eb",
+              color: "white",
+              padding: "12px 14px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontWeight: "600",
+            }}
+          >
+            <span>ERP Assistant</span>
 
             <button
-              onClick={() => setOpen(false)}
-              className="text-2xl leading-none"
+              onClick={() => setIsOpen(false)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "white",
+                fontSize: 18,
+                cursor: "pointer",
+              }}
             >
-              ×
+              ✖
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto bg-gray-100 p-4 space-y-4">
-            {messages.map((msg, index) => (
+          {/* CHAT AREA */}
+          <div
+            style={{
+              flex: 1,
+              padding: 10,
+              overflowY: "auto",
+              background: "#f3f4f6",
+            }}
+          >
+            {chat.map((c, i) => (
               <div
-                key={index}
-                className={`flex ${
-                  msg.sender === "user"
-                    ? "justify-end"
-                    : "justify-start"
-                }`}
+                key={i}
+                style={{
+                  textAlign: c.type === "user" ? "right" : "left",
+                  margin: "6px 0",
+                }}
               >
-                <div
-                  className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                    msg.sender === "user"
-                      ? "bg-blue-600 text-white rounded-br-md"
-                      : "bg-white text-gray-800 shadow rounded-bl-md"
-                  }`}
+                <span
+                  style={{
+                    display: "inline-block",
+                    padding: "8px 12px",
+                    borderRadius: 12,
+                    background:
+                      c.type === "user" ? "#2563eb" : "#e5e7eb",
+                    color: c.type === "user" ? "white" : "black",
+                    fontSize: 14,
+                  }}
                 >
-                  {msg.text}
-                </div>
+                  {c.text}
+                </span>
               </div>
             ))}
-
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-white shadow px-4 py-3 rounded-2xl rounded-bl-md text-sm">
-                  Thinking...
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef}></div>
           </div>
 
-          <div className="p-4 border-t bg-white">
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                placeholder="Ask something..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    sendMessage();
-                  }
-                }}
-                className="flex-1 border border-gray-300 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
-              />
+          {/* INPUT AREA */}
+          <div style={{ display: "flex", padding: 8, gap: 6 }}>
+            <input
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}   // 🔥 ENTER KEY ADDED
+              placeholder="Type a message..."
+              style={{
+                flex: 1,
+                padding: 10,
+                borderRadius: 8,
+                border: "1px solid #ccc",
+                outline: "none",
+              }}
+            />
 
-              <button
-                onClick={sendMessage}
-                disabled={loading}
-                className="bg-blue-600 text-white px-5 py-3 rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition"
-              >
-                Send
-              </button>
-            </div>
+            <button
+              onClick={sendMessage}
+              style={{
+                background: "#2563eb",
+                color: "white",
+                border: "none",
+                padding: "10px 14px",
+                borderRadius: 8,
+                cursor: "pointer",
+              }}
+            >
+              ➤
+            </button>
           </div>
         </div>
       )}

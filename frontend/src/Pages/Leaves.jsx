@@ -1,22 +1,50 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import Sidebar from "../components/Sidebar";
 
 export default function Leaves() {
-  const [leaves, setLeaves] = useState([]);
+  const navigate = useNavigate();
 
-  const [employeeId, setEmployeeId] = useState("");
-  const [leaveType, setLeaveType] = useState("");
-  const [reason, setReason] = useState("");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [isOpen, setIsOpen] = useState(true);
+  const [leaves, setLeaves] =
+    useState([]);
 
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  const [employeeId, setEmployeeId] =
+    useState("");
 
+  const [leaveType, setLeaveType] =
+    useState("");
+
+  const [reason, setReason] =
+    useState("");
+
+  const [fromDate, setFromDate] =
+    useState("");
+
+  const [toDate, setToDate] =
+    useState("");
+
+  
+  const [loading, setLoading] =
+    useState(false);
+
+  const token =
+    localStorage.getItem("token");
+
+  const role =
+    localStorage.getItem("role");
+
+  // CHECK TOKEN
+  useEffect(() => {
+    if (!token) {
+      navigate("/");
+    }
+  }, []);
+
+  // FETCH LEAVES
   const fetchLeaves = async () => {
     try {
+      setLoading(true);
+
       const res = await fetch(
         "http://localhost:5000/leaves",
         {
@@ -26,15 +54,40 @@ export default function Leaves() {
         }
       );
 
+      // TOKEN EXPIRED
+      if (res.status === 401) {
+        localStorage.removeItem("token");
+
+        localStorage.removeItem("role");
+
+        toast.error("Session Expired");
+
+        navigate("/");
+
+        return;
+      }
+
       const data = await res.json();
 
-      setLeaves(Array.isArray(data) ? data : []);
+      console.log(data);
+
+      setLeaves(
+        Array.isArray(data)
+          ? data
+          : []
+      );
     } catch (err) {
       console.log(err);
-      toast.error("Failed to fetch leaves");
+
+      toast.error(
+        "Failed to fetch leaves"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
+  // APPLY LEAVE
   const applyLeave = async () => {
     if (
       !employeeId ||
@@ -43,7 +96,10 @@ export default function Leaves() {
       !fromDate ||
       !toDate
     ) {
-      toast.error("All fields required");
+      toast.error(
+        "All fields are required"
+      );
+
       return;
     }
 
@@ -52,10 +108,14 @@ export default function Leaves() {
         "http://localhost:5000/leaves",
         {
           method: "POST",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
+
             Authorization: `Bearer ${token}`,
           },
+
           body: JSON.stringify({
             employee_id: employeeId,
             leave_type: leaveType,
@@ -72,27 +132,39 @@ export default function Leaves() {
         toast.success(data.message);
 
         setEmployeeId("");
+
         setLeaveType("");
+
         setReason("");
+
         setFromDate("");
+
         setToDate("");
 
         fetchLeaves();
       } else {
-        toast.error(data.message);
+        toast.error(
+          data.message ||
+            "Failed to apply leave"
+        );
       }
     } catch (err) {
       console.log(err);
-      toast.error("Failed to apply leave");
+
+      toast.error(
+        "Failed to apply leave"
+      );
     }
   };
 
+  // APPROVE LEAVE
   const approveLeave = async (id) => {
     try {
       const res = await fetch(
         `http://localhost:5000/leaves/${id}/approve`,
         {
           method: "PUT",
+
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -106,16 +178,19 @@ export default function Leaves() {
       fetchLeaves();
     } catch (err) {
       console.log(err);
+
       toast.error("Approve failed");
     }
   };
 
+  // REJECT LEAVE
   const rejectLeave = async (id) => {
     try {
       const res = await fetch(
         `http://localhost:5000/leaves/${id}/reject`,
         {
           method: "PUT",
+
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -129,6 +204,7 @@ export default function Leaves() {
       fetchLeaves();
     } catch (err) {
       console.log(err);
+
       toast.error("Reject failed");
     }
   };
@@ -138,232 +214,278 @@ export default function Leaves() {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <Sidebar
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-      />
+    <div className="flex min-h-screen bg-gray-100 overflow-hidden">
+     
 
-      <div
-        className={`flex-1 transition-all duration-300 ${
-          isOpen ? "ml-64" : "ml-0"
-        }`}
-      >
-        <div className="p-6 pt-20">
-          {!isOpen && (
-            <button
-              onClick={() => setIsOpen(true)}
-              className="bg-white p-2 rounded shadow mb-4"
-            >
-              ☰
-            </button>
-          )}
+      <div className="w-full">
+        <div className="p-4 md:p-6 pt-20">
+          {/* HEADER */}
+          <div className="flex items-center gap-4 mb-6">
+           
 
-          <h1 className="text-3xl font-bold mb-6">
-            Leave Management
-          </h1>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                Leave Management
+              </h1>
 
-          {/* APPLY LEAVE FORM */}
-
-          <div className="bg-white p-6 rounded-xl shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            <input
-              type="text"
-              placeholder="Enter Employee ID (EMP001)"
-              value={employeeId}
-              onChange={(e) =>
-                setEmployeeId(
-                  e.target.value.toUpperCase()
-                )
-              }
-              className="border p-3 rounded-lg"
-            />
-
-            <select
-              value={leaveType}
-              onChange={(e) =>
-                setLeaveType(e.target.value)
-              }
-              className="border p-3 rounded-lg"
-            >
-              <option value="">
-                Select Leave Type
-              </option>
-
-              <option value="Sick Leave">
-                Sick Leave
-              </option>
-
-              <option value="Casual Leave">
-                Casual Leave
-              </option>
-
-              <option value="Paid Leave">
-                Paid Leave
-              </option>
-            </select>
-
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) =>
-                setFromDate(e.target.value)
-              }
-              className="border p-3 rounded-lg"
-            />
-
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) =>
-                setToDate(e.target.value)
-              }
-              className="border p-3 rounded-lg"
-            />
-
-            <textarea
-              placeholder="Reason"
-              value={reason}
-              onChange={(e) =>
-                setReason(e.target.value)
-              }
-              className="border p-3 rounded-lg md:col-span-2"
-            />
-
-            <button
-              onClick={applyLeave}
-              className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg md:col-span-2"
-            >
-              Apply Leave
-            </button>
+              <p className="text-gray-500 text-sm md:text-base">
+                Manage employee leave
+                requests
+              </p>
+            </div>
           </div>
 
-          {/* LEAVES TABLE */}
+          {/* APPLY LEAVE FORM */}
+          <div className="bg-white p-6 rounded-2xl shadow mb-6">
+            <h2 className="text-xl font-semibold mb-5">
+              Apply Leave
+            </h2>
 
-          <div className="bg-white rounded-xl shadow overflow-auto">
-            <table className="w-full">
-              <thead className="bg-gray-100">
-                <tr>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                placeholder="Employee ID"
+                value={employeeId}
+                onChange={(e) =>
+                  setEmployeeId(
+                    e.target.value.toUpperCase()
+                  )
+                }
+                className="border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-400"
+              />
 
-                  <th className="p-4 text-left">
-                    Employee ID
-                  </th>
+              <select
+                value={leaveType}
+                onChange={(e) =>
+                  setLeaveType(
+                    e.target.value
+                  )
+                }
+                className="border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="">
+                  Select Leave Type
+                </option>
 
-                  <th className="p-4 text-left">
-                    Employee Name
-                  </th>
+                <option value="Sick Leave">
+                  Sick Leave
+                </option>
 
-                  <th className="p-4 text-left">
-                    Leave Type
-                  </th>
+                <option value="Casual Leave">
+                  Casual Leave
+                </option>
 
-                  <th className="p-4 text-left">
-                    Reason
-                  </th>
+                <option value="Paid Leave">
+                  Paid Leave
+                </option>
+              </select>
 
-                  <th className="p-4 text-left">
-                    From
-                  </th>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) =>
+                  setFromDate(
+                    e.target.value
+                  )
+                }
+                className="border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-400"
+              />
 
-                  <th className="p-4 text-left">
-                    To
-                  </th>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) =>
+                  setToDate(
+                    e.target.value
+                  )
+                }
+                className="border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-400"
+              />
 
-                  <th className="p-4 text-left">
-                    Status
-                  </th>
+              <textarea
+                placeholder="Reason"
+                value={reason}
+                onChange={(e) =>
+                  setReason(
+                    e.target.value
+                  )
+                }
+                className="border p-3 rounded-lg md:col-span-2 outline-none focus:ring-2 focus:ring-blue-400"
+                rows={4}
+              />
 
-                  {(role === "admin" ||
-                  role === "hr") && (
-                    <th className="p-4 text-left">
-                      Actions
-                    </th>
-                  )}
+<button
+  onClick={applyLeave}
+  className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition md:col-span-2"
+>
+  Apply Leave
+</button>
+</div>
+</div>
 
-                </tr>
-              </thead>
+<div className="flex gap-4 mb-5">
 
-              <tbody>
-                {leaves.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="border-t hover:bg-gray-50"
-                  >
+  <a href="http://localhost:5000/reports/leaves/pdf">
 
-                    <td className="p-4 font-semibold">
-                      {item.employee_code || "-"}
-                    </td>
+    <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-lg">
+      Export PDF
+    </button>
 
-                    <td className="p-4">
-                      {item.name || "-"}
-                    </td>
+  </a>
 
-                    <td className="p-4">
-                      {item.leave_type}
-                    </td>
+  <a href="http://localhost:5000/reports/leaves/excel">
 
-                    <td className="p-4">
-                      {item.reason}
-                    </td>
+    <button className="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-lg">
+      Export Excel
+    </button>
 
-                    <td className="p-4">
-                      {item.from_date?.split("T")[0]}
-                    </td>
+  </a>
 
-                    <td className="p-4">
-                      {item.to_date?.split("T")[0]}
-                    </td>
-
-                    <td className="p-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-white ${
-                          item.status === "Approved"
-                            ? "bg-green-500"
-                            : item.status === "Rejected"
-                            ? "bg-red-500"
-                            : "bg-yellow-500"
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-
-                    {(role === "admin" ||
-                     role === "hr") && (
-                      <td className="p-4 flex gap-2">
-
-                        <button
-                          onClick={() =>
-                            approveLeave(item.id)
-                          }
-                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                        >
-                          Approve
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            rejectLeave(item.id)
-                          }
-                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                        >
-                          Reject
-                        </button>
-
-                      </td>
-                    )}
-
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {leaves.length === 0 && (
+</div>
+          {/* TABLE */}
+          <div className="bg-white rounded-2xl shadow overflow-hidden">
+            <div className="p-5 border-b">
+              <h2 className="text-xl font-semibold">
+                Leave Records
+              </h2>
+            </div>
+                    
+{loading ? (
+  <div className="p-10 text-center text-gray-500">
+    Loading Leaves...
+  </div>
+) : leaves.length === 0 ? (
               <div className="p-10 text-center text-gray-500">
                 No Leave Records Found
               </div>
-            )}
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1100px] text-sm">
+                  <thead className="bg-gray-100 text-gray-700">
+                    <tr>
+                      <th className="p-4 text-left">
+                        Employee ID
+                      </th>
 
+                      <th className="p-4 text-left">
+                        Employee Name
+                      </th>
+
+                      <th className="p-4 text-left">
+                        Leave Type
+                      </th>
+
+                      <th className="p-4 text-left">
+                        Reason
+                      </th>
+
+                      <th className="p-4 text-left">
+                        From
+                      </th>
+
+                      <th className="p-4 text-left">
+                        To
+                      </th>
+
+                      <th className="p-4 text-left">
+                        Status
+                      </th>
+
+                     {(role === "admin" || role === "hr") && (
+  <th className="p-4 text-left">
+    Actions
+  </th>
+)}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {leaves.map(
+                      (item) => (
+                        <tr
+                          key={item.id}
+                          className="border-t hover:bg-gray-50 transition"
+                        >
+                          <td className="p-4 font-semibold text-blue-700">
+                            {item.employee_code ||
+                              "-"}
+                          </td>
+
+                          <td className="p-4 font-medium">
+                            {item.name ||
+                              "-"}
+                          </td>
+
+                          <td className="p-4">
+                            {item.leave_type}
+                          </td>
+
+                          <td className="p-4">
+                            {item.reason}
+                          </td>
+
+                          <td className="p-4">
+                            {item.from_date?.split(
+                              "T"
+                            )[0] || "-"}
+                          </td>
+
+                          <td className="p-4">
+                            {item.to_date?.split(
+                              "T"
+                            )[0] || "-"}
+                          </td>
+
+                          <td className="p-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${
+                                item.status ===
+                                "Approved"
+                                  ? "bg-green-500"
+                                  : item.status ===
+                                    "Rejected"
+                                  ? "bg-red-500"
+                                  : "bg-yellow-500"
+                              }`}
+                            >
+                              {item.status}
+                            </span>
+                          </td>
+
+                          {(role === "admin" || role === "hr") && (
+                            <td className="p-4">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() =>
+                                    approveLeave(
+                                      item.id
+                                    )
+                                  }
+                                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm"
+                                >
+                                  Approve
+                                </button>
+
+                                <button
+                                  onClick={() =>
+                                    rejectLeave(
+                                      item.id
+                                    )
+                                  }
+                                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>
