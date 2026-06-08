@@ -3,39 +3,92 @@ import { Link, useLocation } from "react-router-dom";
 export default function Sidebar() {
   const location = useLocation();
 
-  const menus = [
-    {
-      name: "Dashboard",
-      path: "/dashboard",
-    },
-    {
-      name: "Employees",
-      path: "/employees",
-    },
-    {
-      name: "Attendance",
-      path: "/attendance",
-    },
-    {
-      name: "Leaves",
-      path: "/leaves",
-    },
-    {
-      name: "Payroll",
-      path: "/payroll",
-    },
-    {
-      name: "Profile",
-      path: "/profile",
-    },
-    {
-      name: "Projects",
-      path: "/projects",
-    },
-  ];
+  const role = localStorage.getItem("role");
+
+  let menus = [];
+
+  if (role === "employee") {
+    menus = [
+      {
+        name: "Dashboard",
+        path: "/dashboard",
+      },
+      {
+        name: "My Projects",
+        path: "/my-projects",
+      },
+      {
+        name: "Leaves",
+        path: "/leaves",
+      },
+      {
+        name: "Profile",
+        path: "/profile",
+      },
+    ];
+  } else if (role === "hr") {
+    menus = [
+      {
+        name: "Dashboard",
+        path: "/dashboard",
+      },
+      {
+        name: "Employees",
+        path: "/employees",
+      },
+      {
+        name: "Projects",
+        path: "/projects",
+      },
+      {
+        name: "Attendance",
+        path: "/attendance",
+      },
+      {
+        name: "Leaves",
+        path: "/leaves",
+      },
+      {
+        name: "Profile",
+        path: "/profile",
+      },
+    ];
+  } else {
+    menus = [
+      {
+        name: "Dashboard",
+        path: "/dashboard",
+      },
+      {
+        name: "Employees",
+        path: "/employees",
+      },
+      {
+        name: "Projects",
+        path: "/projects",
+      },
+      {
+        name: "Attendance",
+        path: "/attendance",
+      },
+      {
+        name: "Leaves",
+        path: "/leaves",
+      },
+      {
+        name: "Payroll",
+        path: "/payroll",
+      },
+      {
+        name: "Profile",
+        path: "/profile",
+      },
+    ];
+  }
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("role");
     window.location.href = "/";
   };
 

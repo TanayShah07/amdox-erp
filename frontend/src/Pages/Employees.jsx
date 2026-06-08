@@ -8,32 +8,7 @@ import autoTable from "jspdf-autotable";
 export default function Employees() {
   const userRole = localStorage.getItem("role");
 
-  const [employees, setEmployees] = useState([
-    {
-      id: 1,
-      employee_code: "EMP001",
-      name: "Sai",
-      role: "Developer",
-      salary: 50000,
-      projects: 3,
-    },
-    {
-      id: 2,
-      employee_code: "EMP002",
-      name: "Lakshmi",
-      role: "HR",
-      salary: 45000,
-      projects: 2,
-    },
-    {
-      id: 3,
-      employee_code: "EMP003",
-      name: "Rahul",
-      role: "Manager",
-      salary: 70000,
-      projects: 5,
-    },
-  ]);
+  const [employees, setEmployees] = useState([]);
 
   const [roles, setRoles] = useState([]);
   const [employeeCode, setEmployeeCode] = useState("");
@@ -45,10 +20,34 @@ export default function Employees() {
   const [filterRole, setFilterRole] = useState("");
   const [editId, setEditId] = useState(null);
 
+  const fetchEmployees = async () => {
+  try {
+    const res = await fetch(
+      "http://localhost:5000/employees"
+    );
+
+    const data = await res.json();
+
+    setEmployees(
+      Array.isArray(data) ? data : []
+    );
+  } catch (err) {
+    console.log(err);
+    toast.error("Failed to fetch employees");
+  }
+};
+
   useEffect(() => {
-    const uniqueRoles = [...new Set(employees.map((e) => e.role))];
-    setRoles(uniqueRoles);
-  }, [employees]);
+  fetchEmployees();
+}, []);
+
+useEffect(() => {
+  const uniqueRoles = [
+    ...new Set(employees.map((e) => e.role)),
+  ];
+
+  setRoles(uniqueRoles);
+}, [employees]);
 
   // ================= EXCEL EXPORT =================
   const exportExcel = async () => {
@@ -118,49 +117,107 @@ export default function Employees() {
   });
 
   // ================= ADD / UPDATE =================
-  const addEmployee = () => {
-    if (!employeeCode || !name || !role || !salary || !projects) {
-      toast.error("Please fill all fields");
-      return;
-    }
+  const addEmployee = async () => {
+  if (
+    !employeeCode ||
+    !name ||
+    !role ||
+    !salary
+  ) {
+    toast.error("Please fill all fields");
+    return;
+  }
+
+  try {
+    let res;
 
     if (editId) {
-      setEmployees(
-        employees.map((emp) =>
-          emp.id === editId
-            ? { ...emp, employee_code: employeeCode, name, role, salary, projects }
-            : emp
-        )
-      );
-      toast.success("Employee Updated");
-      setEditId(null);
-    } else {
-      setEmployees([
-        ...employees,
+      res = await fetch(
+        `http://localhost:5000/employees/${editId}`,
         {
-          id: Date.now(),
-          employee_code: employeeCode,
-          name,
-          role,
-          salary,
-          projects,
-        },
-      ]);
-      toast.success("Employee Added");
+          method: "PUT",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            employee_code: employeeCode,
+            name,
+            role,
+            salary,
+            projects: 0,
+          }),
+        }
+      );
+    } else {
+      res = await fetch(
+        "http://localhost:5000/employees",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            employee_code: employeeCode,
+            name,
+            role,
+            salary,
+            projects: 0,
+          }),
+        }
+      );
     }
 
-    setEmployeeCode("");
-    setName("");
-    setRole("");
-    setSalary("");
-    setProjects("");
-  };
+    const data = await res.json();
 
+    if (data.success) {
+      toast.success(
+        editId
+          ? "Employee Updated"
+          : "Employee Added"
+      );
+
+      setEmployeeCode("");
+      setName("");
+      setRole("");
+      setSalary("");
+      setProjects("");
+      setEditId(null);
+
+      fetchEmployees();
+    }
+  } catch (err) {
+    console.log(err);
+    toast.error("Operation Failed");
+  }
+};
   // ================= DELETE =================
-  const deleteEmployee = (id) => {
-    setEmployees(employees.filter((emp) => emp.id !== id));
-    toast.success("Employee Deleted");
-  };
+  const deleteEmployee = async (id) => {
+  try {
+    const res = await fetch(
+      `http://localhost:5000/employees/${id}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      toast.success(
+        "Employee Deleted"
+      );
+
+      fetchEmployees();
+    }
+  } catch (err) {
+    console.log(err);
+    toast.error(
+      "Delete Failed"
+    );
+  }
+};
 
   // ================= ROLE COLOR =================
   const getRoleColor = (role) => {
@@ -186,14 +243,18 @@ export default function Employees() {
         {/* STATS */}
         <div className="grid grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-2xl shadow">
-            Total: {employees.length}
+            <p className="text-gray-500">Total Employees</p>
+            <p className="text-3xl font-bold">{employees.length}</p>
           </div>
           <div className="bg-white p-6 rounded-2xl shadow">
-            Roles: {roles.length}
+            <p className="text-gray-500">Roles</p>
+            <p className="text-3xl font-bold">{roles.length}</p>
           </div>
           <div className="bg-white p-6 rounded-2xl shadow">
-            Projects:{" "}
-            {employees.reduce((a, b) => a + Number(b.projects), 0)}
+            <p className="text-gray-500">Active Projects</p>
+            <p className="text-3xl font-bold">
+              {employees.reduce((a, b) => a + Number(b.projects || 0), 0)}
+            </p>
           </div>
         </div>
 
@@ -276,44 +337,74 @@ export default function Employees() {
         )}
 
         {/* TABLE */}
-        <div className="bg-white rounded-2xl shadow overflow-x-auto">
+        <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-100">
               <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Role</th>
-                <th>Salary</th>
-                <th>Projects</th>
-                <th>Actions</th>
+                <th className="p-5 text-left">Employee Code</th>
+                <th className="p-5 text-left">Employee Name</th>
+                <th className="p-5 text-left">Role</th>
+                <th className="p-5 text-left">Salary</th>
+                <th className="p-5 text-left">Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {filteredEmployees.map((emp) => (
-                <tr key={emp.id}>
-                  <td>{emp.employee_code}</td>
-                  <td>{emp.name}</td>
-                  <td>
-                    <span className={getRoleColor(emp.role)}>
-                      {emp.role}
-                    </span>
-                  </td>
-                  <td>{emp.salary}</td>
-                  <td>{emp.projects}</td>
+            {filteredEmployees.map((emp) => (
+              <tr
+                key={emp.id}
+                className="border-t hover:bg-gray-50 transition-all duration-200"
+              >
+                <td className="p-5 font-medium">
+                  {emp.employee_code}
+                </td>
 
-                  <td>
-                    <button onClick={() => setEditId(emp.id)}>
+                <td className="p-5">
+                  {emp.name}
+                </td>
+
+                <td className="p-5">
+                  <span
+                    className={`${getRoleColor(
+                      emp.role
+                    )} px-4 py-2 rounded-full text-sm font-semibold`}
+                  >
+                    {emp.role}
+                  </span>
+                </td>
+
+                <td className="p-5 font-semibold text-gray-700">
+                  ₹ {Number(emp.salary).toLocaleString("en-IN")}
+                </td>
+
+                <td className="p-5">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        setEditId(emp.id);
+                        setEmployeeCode(emp.employee_code);
+                        setName(emp.name);
+                        setRole(emp.role);
+                        setSalary(emp.salary);
+                      }}
+                      className="bg-blue-100 text-blue-700 px-5 py-2 rounded-xl hover:bg-blue-200 transition"
+                    >
                       Edit
                     </button>
 
-                    <button onClick={() => deleteEmployee(emp.id)}>
+                    <button
+                      onClick={() =>
+                        deleteEmployee(emp.id)
+                      }
+                      className="bg-red-100 text-red-600 px-5 py-2 rounded-xl hover:bg-red-200 transition"
+                    >
                       Delete
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
 
           </table>
         </div>

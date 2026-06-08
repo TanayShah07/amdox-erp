@@ -19,7 +19,7 @@ import Attendance from "./pages/Attendance";
 import Leaves from "./pages/Leaves";
 import Payroll from "./pages/Payroll";
 import ChatBot from "./components/ChatBot";
-
+import MyProjects from "./pages/MyProjects";
 /* ---------------- PROTECTED ROUTE ---------------- */
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -54,16 +54,102 @@ const MainLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const menu = [
-    { name: "Dashboard", icon: "🏠", path: "/dashboard" },
-    { name: "Employees", icon: "👨‍💼", path: "/employees" },
-    { name: "Projects", icon: "📁", path: "/projects" },
-    { name: "Attendance", icon: "📅", path: "/attendance" },
-    { name: "Leaves", icon: "🏖️", path: "/leaves" },
-    { name: "Payroll", icon: "💰", path: "/payroll" },
-    { name: "Profile", icon: "👤", path: "/profile" },
-  ];
+  const role = localStorage.getItem("role");
 
+const menu =
+  role === "employee"
+    ? [
+        {
+          name: "Dashboard",
+          icon: "🏠",
+          path: "/dashboard",
+        },
+        {
+          name: "My Projects",
+          icon: "📁",
+          path: "/my-projects",
+        },
+        {
+          name: "Leaves",
+          icon: "🏖️",
+          path: "/leaves",
+        },
+        {
+          name: "Profile",
+          icon: "👤",
+          path: "/profile",
+        },
+      ]
+    : role === "hr"
+    ? [
+        {
+          name: "Dashboard",
+          icon: "🏠",
+          path: "/dashboard",
+        },
+        {
+          name: "Employees",
+          icon: "👨‍💼",
+          path: "/employees",
+        },
+        {
+          name: "Projects",
+          icon: "📁",
+          path: "/projects",
+        },
+        {
+          name: "Attendance",
+          icon: "📅",
+          path: "/attendance",
+        },
+        {
+          name: "Leaves",
+          icon: "🏖️",
+          path: "/leaves",
+        },
+        {
+          name: "Profile",
+          icon: "👤",
+          path: "/profile",
+        },
+      ]
+    : [
+        {
+          name: "Dashboard",
+          icon: "🏠",
+          path: "/dashboard",
+        },
+        {
+          name: "Employees",
+          icon: "👨‍💼",
+          path: "/employees",
+        },
+        {
+          name: "Projects",
+          icon: "📁",
+          path: "/projects",
+        },
+        {
+          name: "Attendance",
+          icon: "📅",
+          path: "/attendance",
+        },
+        {
+          name: "Leaves",
+          icon: "🏖️",
+          path: "/leaves",
+        },
+        {
+          name: "Payroll",
+          icon: "💰",
+          path: "/payroll",
+        },
+        {
+          name: "Profile",
+          icon: "👤",
+          path: "/profile",
+        },
+      ];
   return (
     <div style={{ display: "flex" }}>
       {/* SIDEBAR */}
@@ -207,6 +293,17 @@ function App() {
             <ProtectedRoute>
               <MainLayout>
                 <Projects />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/my-projects"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <MyProjects />
               </MainLayout>
             </ProtectedRoute>
           }

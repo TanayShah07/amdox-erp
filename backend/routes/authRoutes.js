@@ -5,7 +5,6 @@ import { pool } from "../server.js";
 
 const router = express.Router();
 
-/* REGISTER */
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -24,9 +23,11 @@ router.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
-      `INSERT INTO users (name, email, password, role)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, name, email, role`,
+      `
+      INSERT INTO users (name, email, password, role)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, name, email, role
+      `,
       [
         name,
         email,
@@ -35,19 +36,33 @@ router.post("/register", async (req, res) => {
       ]
     );
 
+    const user = result.rows[0];
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET || "myfallbacksecret123",
+      {
+        expiresIn: "1d",
+      }
+    );
+
     res.json({
-      success: true,
-      user: result.rows[0],
+      token,
+      role: user.role,
+      user,
     });
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
+    console.error(err);
+
     res.status(500).json({
       message: err.message,
     });
   }
 });
 
-/* LOGIN */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -76,20 +91,20 @@ router.post("/login", async (req, res) => {
       });
     }
 
-   const token = jwt.sign(
-  {
-    id: user.id,
-    role: user.role,
-  },
-  process.env.JWT_SECRET || "myfallbacksecret123",
-  {
-    expiresIn: "1d",
-  }
-);
+    const token = jwt.sign(
+      {
+        id: user.id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET || "myfallbacksecret123",
+      {
+        expiresIn: "1d",
+      }
+    );
 
     res.json({
-      success: true,
       token,
+      role: user.role,
       user: {
         id: user.id,
         name: user.name,
@@ -98,9 +113,71 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
+    console.error(err);
+
     res.status(500).json({
       message: err.message,
+    });
+  }
+});
+
+router.post("/google-login", async (req, res) => {
+  try {
+    const { name, email } = req.body;
+
+    let result = await pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+
+    let user;
+
+    if (result.rows.length === 0) {
+      const newUser = await pool.query(
+        `
+        INSERT INTO users (name, email, password, role)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, name, email, role
+        `,
+        [
+          name,
+          email,
+          "GOOGLE_AUTH",
+          "employee",
+        ]
+      );
+
+      user = newUser.rows[0];
+    } else {
+      user = result.rows[0];
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET || "myfallbacksecret123",
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    res.json({
+      token,
+      role: user.role,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Google Login Failed",
     });
   }
 });

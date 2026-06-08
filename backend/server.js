@@ -16,6 +16,8 @@ import employeeRoutes from "./routes/employeeRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import leaveRoutes from "./routes/leaveRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import payrollRoutes from "./routes/payrollRoutes.js";
+import myProjectRoutes from "./routes/myProjectRoutes.js";
 
 const { Pool } = pkg;
 
@@ -24,7 +26,10 @@ const app = express();
 /* =========================
    DEBUG (safe checks)
 ========================= */
-console.log("🔑 OPENAI KEY:", process.env.OPENAI_API_KEY ? "LOADED" : "MISSING");
+console.log(
+  "🔑 GEMINI KEY:",
+  process.env.GEMINI_API_KEY ? "LOADED" : "MISSING"
+);
 /* =========================
    MIDDLEWARE
 ========================= */
@@ -60,7 +65,8 @@ app.use("/reports", reportRoutes);
 app.use("/projects", projectRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/chatbot", chatbotRoutes);
-
+app.use("/payroll", payrollRoutes);
+app.use("/my-projects", myProjectRoutes);
 /* =========================
    HEALTH CHECK
 ========================= */

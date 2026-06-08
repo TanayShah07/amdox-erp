@@ -37,24 +37,7 @@ const Projects = () => {
         "http://localhost:5000/projects";
 
       if (role === "employee") {
-
-        const profileRes =
-          await fetch(
-"http://localhost:5000/api/user/profile",           {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-        const profileData =
-          await profileRes.json();
-
-        const employeeCode =
-          profileData.user.employee_code;
-
-        url =
-          `http://localhost:5000/projects?employee_code=${employeeCode}`;
+        url = "http://localhost:5000/projects";
       }
 
       const res = await fetch(url, {
@@ -89,7 +72,7 @@ const Projects = () => {
       try {
 
         const res = await fetch(
-          "http://localhost:5000/project-employees",
+          "http://localhost:5000/projects/project-employees",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -232,7 +215,7 @@ const Projects = () => {
       try {
 
         await fetch(
-          "http://localhost:5000/assign-project",
+          "http://localhost:5000/projects/assign-project",
           {
             method: "POST",
 

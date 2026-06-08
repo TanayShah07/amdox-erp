@@ -37,7 +37,7 @@ const navigate = useNavigate();
       const user = result.user;
 
       const res = await fetch(
-        "http://localhost:5000/google-login",
+        "http://localhost:5000/api/auth/google-login",
         {
           method: "POST",
 
@@ -66,6 +66,13 @@ const navigate = useNavigate();
           data.role
         );
 
+        localStorage.setItem(
+          "name",
+          data.user.name
+        );
+
+        
+
         toast.success(
           "Google Login Successful"
         );
@@ -93,8 +100,8 @@ const navigate = useNavigate();
 
     // Correct Backend URLs
     const url = isLogin
-      ? "http://localhost:5000/api/auth/login"
-      : "http://localhost:5000/api/auth/signup";
+    ? "http://localhost:5000/api/auth/login"
+    : "http://localhost:5000/api/auth/register";
 
     const body = isLogin
       ? {
@@ -126,6 +133,13 @@ const navigate = useNavigate();
 
     if (data.role) {
       localStorage.setItem("role", data.role);
+    }
+
+    if (data.user?.name) {
+      localStorage.setItem(
+        "name",
+        data.user.name
+      );
     }
 
     toast.success(
