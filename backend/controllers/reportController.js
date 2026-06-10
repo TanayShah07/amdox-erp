@@ -137,8 +137,8 @@ export const exportEmployeeExcel =
       worksheet.columns = [
 
         {
-          header: "Employee Code",
-          key: "employee_code",
+          header: "Employee Id",
+          key: "employee_id",
           width: 20,
         },
 
@@ -656,7 +656,7 @@ export const exportPayrollPDF =
       payroll.forEach((p) => {
 
         doc.text(
-          `Employee Code: ${p.employee_code}`
+          `Employee Id: ${p.employee_id}`
         );
 
         doc.text(
@@ -720,8 +720,8 @@ export const exportPayrollExcel =
       worksheet.columns = [
 
         {
-          header: "Employee Code",
-          key: "employee_code",
+          header: "Employee Id",
+          key: "employee_id",
           width: 20,
         },
 

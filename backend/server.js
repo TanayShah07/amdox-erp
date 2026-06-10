@@ -74,6 +74,49 @@ app.get("/", (req, res) => {
   res.send("Server Working 🚀");
 });
 
+
+app.get("/api/profile-stats", async (req, res) => {
+  try {
+    const employeeCode = req.query.employeeCode;
+
+    const attendance = await pool.query(
+      "SELECT COUNT(*) FROM attendance WHERE employee_id = $1",
+      [employeeCode]
+    );
+
+    const leaves = await pool.query(
+      "SELECT COUNT(*) FROM leaves WHERE employee_id = $1",
+      [employeeCode]
+    );
+
+    const projects = await pool.query(
+  `
+  SELECT COUNT(DISTINCT project_id) AS count
+  FROM assigned_projects
+  WHERE employee_code = $1
+  `,
+  [employeeCode]
+);
+
+    const employee = await pool.query(
+      "SELECT salary FROM employees WHERE employee_code = $1",
+      [employeeCode]
+    );
+
+    res.json({
+      attendance: attendance.rows[0].count,
+      leaves: leaves.rows[0].count,
+      projects: projects.rows[0].count,
+      salary: employee.rows[0]?.salary || 0,
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "Server Error",
+    });
+  }
+});
 /* =========================
    GLOBAL ERROR HANDLER (IMPORTANT)
 ========================= */

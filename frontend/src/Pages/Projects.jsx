@@ -429,6 +429,13 @@ const Projects = () => {
       return "bg-blue-100 text-blue-700";
     };
 
+  const pageTitleStyle = {
+  fontSize: "32px",
+  fontWeight: "700",
+  color: "#111827",
+  marginBottom: "24px",
+};
+
   return (
   <div className="flex min-h-screen bg-gray-100">
     
@@ -444,7 +451,7 @@ const Projects = () => {
 
             <div>
 
-              <h1 className="text-3xl font-bold">
+              <h1 style={pageTitleStyle}>
                 Projects
               </h1>
 

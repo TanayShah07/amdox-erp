@@ -8,6 +8,16 @@ import {
   useLocation,
 } from "react-router-dom";
 
+import {
+  LayoutDashboard,
+  Users,
+  FolderKanban,
+  CalendarDays,
+  Plane,
+  Wallet,
+  User,
+} from "lucide-react";
+
 import { Toaster } from "react-hot-toast";
 
 import Auth from "./pages/Auth";
@@ -61,22 +71,27 @@ const menu =
     ? [
         {
           name: "Dashboard",
-          icon: "🏠",
+          icon: <LayoutDashboard size={20} />,
           path: "/dashboard",
         },
         {
           name: "My Projects",
-          icon: "📁",
+          icon: <FolderKanban size={20} />,
           path: "/my-projects",
         },
         {
+          name: "Attendance",
+          icon: <CalendarDays size={20} />,
+          path: "/attendance",
+        },
+        {
           name: "Leaves",
-          icon: "🏖️",
+          icon: <Plane size={20} />,
           path: "/leaves",
         },
         {
           name: "Profile",
-          icon: "👤",
+          icon: <User size={20} />,
           path: "/profile",
         },
       ]
@@ -84,69 +99,69 @@ const menu =
     ? [
         {
           name: "Dashboard",
-          icon: "🏠",
+          icon: <LayoutDashboard size={20} />,
           path: "/dashboard",
         },
         {
           name: "Employees",
-          icon: "👨‍💼",
+          icon: <Users size={20} />,
           path: "/employees",
         },
         {
           name: "Projects",
-          icon: "📁",
+          icon: <FolderKanban size={20} />,
           path: "/projects",
         },
         {
           name: "Attendance",
-          icon: "📅",
+          icon: <CalendarDays size={20} />,
           path: "/attendance",
         },
         {
           name: "Leaves",
-          icon: "🏖️",
+          icon: <Plane size={20} />,
           path: "/leaves",
         },
         {
           name: "Profile",
-          icon: "👤",
+          icon: <User size={20} />,
           path: "/profile",
         },
       ]
     : [
         {
           name: "Dashboard",
-          icon: "🏠",
+          icon: <LayoutDashboard size={20} />,
           path: "/dashboard",
         },
         {
           name: "Employees",
-          icon: "👨‍💼",
+          icon: <Users size={20} />,
           path: "/employees",
         },
         {
           name: "Projects",
-          icon: "📁",
+          icon: <FolderKanban size={20} />,
           path: "/projects",
         },
         {
           name: "Attendance",
-          icon: "📅",
+          icon: <CalendarDays size={20} />,
           path: "/attendance",
         },
         {
           name: "Leaves",
-          icon: "🏖️",
+          icon: <Plane size={20} />,
           path: "/leaves",
         },
         {
           name: "Payroll",
-          icon: "💰",
+          icon: <Wallet size={20} />,
           path: "/payroll",
         },
         {
           name: "Profile",
-          icon: "👤",
+          icon: <User size={20} />,
           path: "/profile",
         },
       ];
@@ -155,7 +170,7 @@ const menu =
       {/* SIDEBAR */}
       <div
         style={{
-          width: collapsed ? "70px" : "230px",
+          width: collapsed ? "90px" : "260px",
           height: "100vh",
           background: "#111",
           color: "white",
@@ -167,16 +182,17 @@ const menu =
         }}
       >
         <div
-          style={{
-            textAlign: "center",
-            padding: "15px",
-            fontSize: "22px",
-            fontWeight: "bold",
-            marginBottom: "15px",
-          }}
-        >
-          ERP System
-        </div>
+        style={{
+          textAlign: "center",
+          padding: "20px",
+          fontSize: "22px",
+          fontWeight: "bold",
+          marginBottom: "20px",
+          borderBottom: "1px solid #333",
+        }}
+       >
+        {collapsed ? "ERP" : "ERP System"}
+       </div>
 
         {menu.map((item) => {
           const active = location.pathname === item.path;
@@ -188,28 +204,41 @@ const menu =
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: collapsed ? "0px" : "12px",
-                padding: "12px",
+                gap: "12px",
+                padding: "14px 18px",
                 cursor: "pointer",
-                justifyContent: collapsed
-                  ? "center"
-                  : "flex-start",
+                margin: "6px 10px",
+                borderRadius: "10px",
                 background: active
-                  ? "#1f2937"
+                  ? "#2563eb"
                   : "transparent",
-                borderRight: active
-                  ? "4px solid #3b82f6"
-                  : "none",
+                boxShadow: active
+                ? "0 4px 12px rgba(37,99,235,0.3)"
+                : "none",  
+                transition: "0.3s",
+             }}
+            >
+            <span
+              style={{
+                fontSize: "22px",
+                minWidth: "30px",
+                textAlign: "center",
               }}
             >
-              <span style={{ fontSize: "20px" }}>
-                {item.icon}
-              </span>
+              {item.icon}
+            </span>
 
-              {!collapsed && (
-                <span>{item.name}</span>
-              )}
-            </div>
+            {!collapsed && (
+              <span
+                style={{
+                  fontSize: "15px",
+                  fontWeight: "500",
+                }}
+              >
+                {item.name}
+              </span>
+            )}
+          </div>
           );
         })}
       </div>
@@ -217,7 +246,7 @@ const menu =
       {/* CONTENT */}
       <div
         style={{
-          marginLeft: collapsed ? "70px" : "230px",
+          marginLeft: collapsed ? "90px" : "260px",
           width: "100%",
           transition: "0.3s",
         }}
@@ -232,19 +261,19 @@ const menu =
             zIndex: 1000,
           }}
         >
-          <button
-            onClick={() =>
-              setCollapsed(!collapsed)
-            }
-            style={{
-              fontSize: "24px",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            ☰
-          </button>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          style={{
+            fontSize: "24px",
+            background: "#f3f4f6",
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+            padding: "6px 12px",
+            cursor: "pointer",
+          }}
+        >
+          ☰
+        </button>
         </div>
 
        <div style={{ padding: "20px" }}>

@@ -231,12 +231,19 @@ useEffect(() => {
     return "bg-green-100 text-green-700";
   };
 
+  const pageTitleStyle = {
+  fontSize: "32px",
+  fontWeight: "700",
+  color: "#111827",
+  marginBottom: "24px",
+};
+
   return (
    <div className="bg-gray-100 min-h-screen">
   <div className="p-8">
 
         {/* HEADER */}
-        <h1 className="text-5xl font-bold text-gray-800 mb-8">
+        <h1 style={pageTitleStyle}>
           Employees
         </h1>
 
@@ -341,7 +348,7 @@ useEffect(() => {
           <table className="w-full">
             <thead className="bg-gray-100">
               <tr>
-                <th className="p-5 text-left">Employee Code</th>
+                <th className="p-5 text-left">Employee Id</th>
                 <th className="p-5 text-left">Employee Name</th>
                 <th className="p-5 text-left">Role</th>
                 <th className="p-5 text-left">Salary</th>

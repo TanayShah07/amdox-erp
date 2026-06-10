@@ -52,8 +52,11 @@ if (!res.ok) {
 }
 
       const data = await res.json();
+      console.log("USER DATA:", data.user);
 
       setUser(data.user);
+
+      fetchStats(data.user.employee_code);
 
     } catch {
       localStorage.removeItem("token");
@@ -65,10 +68,34 @@ if (!res.ok) {
     fetchProfile();
   }, []);
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    navigate("/");
+  const fetchStats = async (employeeId) => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/profile-stats?employeeCode=${employeeId}`
+      );
+
+      const data = await res.json();
+
+      console.log("STATS:", data);
+
+      setStats(data);
+    } catch (err) {
+      console.log(err);
+    }
   };
+
+ const logout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  navigate("/");
+};
+
+const [stats, setStats] = useState({
+  attendance: 0,
+  leaves: 0,
+  projects: 0,
+  salary: 0,
+});
 
   const changePassword = async () => {
     const token = localStorage.getItem("token");
@@ -142,7 +169,7 @@ if (!res.ok) {
           </button>
 
           <h1 className="text-4xl font-bold">
-            Settings Dashboard
+            My Profile
           </h1>
 
         </div>
@@ -169,23 +196,33 @@ if (!res.ok) {
                 {user.name}
               </h2>
 
-              <p className="text-gray-500">
+              <p className="text-gray-500 mb-4">
                 {user.email}
               </p>
 
-              <p className="mt-2">
-                Employee ID:
-                <span className="font-bold ml-2">
-                  {user.employee_code || "N/A"}
-                </span>
-              </p>
+              <div className="grid md:grid-cols-2 gap-4">
 
-              <p>
-                Role:
-                <span className="font-bold ml-2 uppercase">
-                  {user.role}
-                </span>
-              </p>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-gray-500 text-sm">
+                    Employee ID
+                  </p>
+
+                  <p className="font-semibold">
+                    {user.employee_code || "N/A"}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-gray-500 text-sm">
+                    Role
+                  </p>
+
+                  <p className="font-semibold uppercase">
+                    {user.role}
+                  </p>
+                </div>
+
+              </div>
 
             </div>
           </div>
@@ -201,7 +238,7 @@ if (!res.ok) {
             </h3>
 
             <p className="text-3xl font-bold">
-              92%
+              {stats.attendance}
             </p>
           </div>
 
@@ -211,7 +248,7 @@ if (!res.ok) {
             </h3>
 
             <p className="text-3xl font-bold">
-              12
+              {stats.leaves}
             </p>
           </div>
 
@@ -221,7 +258,7 @@ if (!res.ok) {
             </h3>
 
             <p className="text-3xl font-bold">
-              5
+              {stats.projects}
             </p>
           </div>
 
@@ -231,7 +268,7 @@ if (!res.ok) {
             </h3>
 
             <p className="text-3xl font-bold">
-              ₹80K
+              ₹{stats.salary}
             </p>
           </div>
 

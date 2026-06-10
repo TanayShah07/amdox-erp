@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 export default function Payroll() {
   const [payroll, setPayroll] = useState([]);
 
-  const [employeeCode, setEmployeeCode] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
   const [employeeName, setEmployeeName] = useState("");
   const [basicSalary, setBasicSalary] = useState("");
   const [bonus, setBonus] = useState("");
@@ -13,16 +13,14 @@ export default function Payroll() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
+  // FETCH PAYROLL
   const fetchPayroll = async () => {
     try {
-      const res = await fetch(
-        "http://localhost:5000/payroll",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch("http://localhost:5000/payroll", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       const data = await res.json();
 
@@ -33,41 +31,35 @@ export default function Payroll() {
     }
   };
 
+  // ADD PAYROLL
   const addPayroll = async () => {
-    if (
-      !employeeCode ||
-      !employeeName ||
-      !basicSalary
-    ) {
+    if (!employeeId || !employeeName || !basicSalary) {
       toast.error("Fill all required fields");
       return;
     }
 
     try {
-      const res = await fetch(
-        "http://localhost:5000/payroll",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            employee_code: employeeCode,
-            employee_name: employeeName,
-            basic_salary: basicSalary,
-            bonus,
-            deductions,
-          }),
-        }
-      );
+      const res = await fetch("http://localhost:5000/payroll", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          employee_id: employeeId,
+          employee_name: employeeName,
+          basic_salary: basicSalary,
+          bonus,
+          deductions,
+        }),
+      });
 
       const data = await res.json();
 
       if (data.success) {
         toast.success(data.message);
 
-        setEmployeeCode("");
+        setEmployeeId("");
         setEmployeeName("");
         setBasicSalary("");
         setBonus("");
@@ -75,7 +67,7 @@ export default function Payroll() {
 
         fetchPayroll();
       } else {
-        toast.error("Failed");
+        toast.error(data.message || "Failed to add payroll");
       }
     } catch (err) {
       console.log(err);
@@ -87,23 +79,29 @@ export default function Payroll() {
     fetchPayroll();
   }, []);
 
+  const pageTitleStyle = {
+  fontSize: "32px",
+  fontWeight: "700",
+  color: "#111827",
+  marginBottom: "24px",
+};
+
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="p-8">
-        <h1 className="text-5xl font-bold text-gray-800 mb-8">
+        <h1 style={pageTitleStyle}>
           Payroll Management
         </h1>
 
+        {/* FORM */}
         {(role === "admin" || role === "hr") && (
           <div className="bg-white p-6 rounded-2xl shadow mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
-              placeholder="Employee Code"
-              value={employeeCode}
+              placeholder="Employee Id"
+              value={employeeId}
               onChange={(e) =>
-                setEmployeeCode(
-                  e.target.value.toUpperCase()
-                )
+                setEmployeeId(e.target.value.toUpperCase())
               }
               className="border p-3 rounded-xl"
             />
@@ -157,64 +155,36 @@ export default function Payroll() {
           </div>
         )}
 
+        {/* TABLE */}
         <div className="bg-white rounded-2xl shadow overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-100">
               <tr>
-                <th className="p-4 text-left">
-                  Employee Code
-                </th>
-
-                <th className="p-4 text-left">
-                  Employee Name
-                </th>
-
-                <th className="p-4 text-left">
-                  Salary
-                </th>
-
-                <th className="p-4 text-left">
-                  Bonus
-                </th>
-
-                <th className="p-4 text-left">
-                  Deductions
-                </th>
-
-                <th className="p-4 text-left">
-                  Net Salary
-                </th>
-
-                <th className="p-4 text-left">
-                  Date
-                </th>
+                <th className="p-4 text-left">Employee Id</th>
+                <th className="p-4 text-left">Employee Name</th>
+                <th className="p-4 text-left">Salary</th>
+                <th className="p-4 text-left">Bonus</th>
+                <th className="p-4 text-left">Deductions</th>
+                <th className="p-4 text-left">Net Salary</th>
+                <th className="p-4 text-left">Date</th>
               </tr>
             </thead>
 
             <tbody>
               {payroll.map((item) => (
-                <tr
-                  key={item.id}
-                  className="border-t hover:bg-gray-50"
-                >
-                  <td className="p-4">
-                    {item.employee_code}
-                  </td>
+                <tr key={item.id} className="border-t hover:bg-gray-50">
+                  <td className="p-4">{item.employee_id || "-"}</td>
 
-                  <td className="p-4">
-                    {item.employee_name}
-                  </td>
+                  <td className="p-4">{item.employee_name || "-"}</td>
 
-                  <td className="p-4">
-                    ₹ {item.basic_salary}
-                  </td>
+                  <td className="p-4">₹ {item.basic_salary}</td>
 
                   <td className="p-4 text-green-600">
-                    ₹ {item.bonus}
+                    ₹ {item.bonus || 0}
                   </td>
 
                   <td className="p-4 text-red-600">
-                    ₹ {item.deductions}
+                    ₹ {item.deductions || 0}
                   </td>
 
                   <td className="p-4 font-bold text-blue-700">
@@ -222,7 +192,7 @@ export default function Payroll() {
                   </td>
 
                   <td className="p-4">
-                    {item.pay_date?.split("T")[0]}
+                    {item.pay_date?.split("T")[0] || "-"}
                   </td>
                 </tr>
               ))}

@@ -18,6 +18,10 @@ export default function Sidebar() {
         path: "/my-projects",
       },
       {
+        name: "Attendance",
+        path: "/attendance",
+      },
+      {
         name: "Leaves",
         path: "/leaves",
       },
@@ -93,33 +97,42 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="hidden md:block w-64 bg-gray-900 text-white min-h-screen p-5 fixed left-0 top-0">
-      <h1 className="text-3xl font-bold mb-10">
+  <div className="hidden md:flex flex-col w-72 bg-slate-900 text-white h-screen fixed left-0 top-0 shadow-xl">
+    
+    <div className="p-6 border-b border-slate-700">
+      <h1 className="text-2xl font-bold tracking-wide">
         ERP System
       </h1>
-
-      <div className="flex flex-col gap-3">
-        {menus.map((menu, index) => (
-          <Link
-            key={index}
-            to={menu.path}
-            className={`px-4 py-3 rounded-lg transition-all duration-200 ${
-              location.pathname === menu.path
-                ? "bg-blue-600"
-                : "hover:bg-gray-700"
-            }`}
-          >
-            {menu.name}
-          </Link>
-        ))}
-
-        <button
-          onClick={logout}
-          className="mt-6 bg-red-500 hover:bg-red-600 px-4 py-3 rounded-lg"
-        >
-          Logout
-        </button>
-      </div>
+      <p className="text-sm text-slate-400 mt-1">
+        Management Portal
+      </p>
     </div>
-  );
+
+    <div className="flex-1 p-4 space-y-2 overflow-y-auto">
+      {menus.map((menu, index) => (
+        <Link
+          key={index}
+          to={menu.path}
+          className={`block px-4 py-3 rounded-xl transition-all duration-300 ${
+            location.pathname === menu.path
+              ? "bg-blue-600 text-white shadow-md"
+              : "text-slate-300 hover:bg-slate-800 hover:text-white"
+          }`}
+        >
+          {menu.name}
+        </Link>
+      ))}
+    </div>
+
+    <div className="p-4 border-t border-slate-700">
+      <button
+        onClick={logout}
+        className="w-full bg-red-500 hover:bg-red-600 py-3 rounded-xl font-medium transition"
+      >
+        Logout
+      </button>
+    </div>
+
+  </div>
+);
 }

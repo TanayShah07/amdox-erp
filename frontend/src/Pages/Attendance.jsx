@@ -160,6 +160,13 @@ export default function Attendance() {
     fetchAttendance();
   }, []);
 
+  const pageTitleStyle = {
+  fontSize: "32px",
+  fontWeight: "700",
+  color: "#111827",
+  marginBottom: "24px",
+};
+
   return (
     <div className="flex min-h-screen bg-gray-100 overflow-hidden">
       
@@ -172,9 +179,9 @@ export default function Attendance() {
             
 
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-                Attendance Management
-              </h1>
+              <h1 style={pageTitleStyle}>
+              Attendance
+             </h1>
 
               <p className="text-gray-500 text-sm md:text-base">
                 Manage employee

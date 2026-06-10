@@ -90,11 +90,12 @@ router.post("/login", async (req, res) => {
         message: "Invalid password",
       });
     }
-
+    
     const token = jwt.sign(
       {
         id: user.id,
         role: user.role,
+        employee_id: user.employee_id,
       },
       process.env.JWT_SECRET || "myfallbacksecret123",
       {

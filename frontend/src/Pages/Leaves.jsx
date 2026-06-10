@@ -213,6 +213,13 @@ export default function Leaves() {
     fetchLeaves();
   }, []);
 
+  const pageTitleStyle = {
+  fontSize: "32px",
+  fontWeight: "700",
+  color: "#111827",
+  marginBottom: "24px",
+};
+
   return (
     <div className="flex min-h-screen bg-gray-100 overflow-hidden">
      
@@ -224,9 +231,9 @@ export default function Leaves() {
            
 
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-                Leave Management
-              </h1>
+              <h1 style={pageTitleStyle}>
+              Leaves
+             </h1>
 
               <p className="text-gray-500 text-sm md:text-base">
                 Manage employee leave
@@ -400,89 +407,71 @@ export default function Leaves() {
                   </thead>
 
                   <tbody>
-                    {leaves.map(
-                      (item) => (
-                        <tr
-                          key={item.id}
-                          className="border-t hover:bg-gray-50 transition"
-                        >
-                          <td className="p-4 font-semibold text-blue-700">
-                            {item.employee_code ||
-                              "-"}
-                          </td>
+  {leaves.map((item) => (
+    <tr
+      key={item.id}
+      className="border-t hover:bg-gray-50 transition"
+    >
+      <td className="p-4 font-semibold text-blue-700">
+        {item.employee_id || "-"}
+      </td>
 
-                          <td className="p-4 font-medium">
-                            {item.name ||
-                              "-"}
-                          </td>
+      <td className="p-4 font-medium">
+        {item.employee_name || "-"}
+      </td>
 
-                          <td className="p-4">
-                            {item.leave_type}
-                          </td>
+      <td className="p-4">
+        {item.leave_type}
+      </td>
 
-                          <td className="p-4">
-                            {item.reason}
-                          </td>
+      <td className="p-4">
+        {item.reason}
+      </td>
 
-                          <td className="p-4">
-                            {item.from_date?.split(
-                              "T"
-                            )[0] || "-"}
-                          </td>
+      <td className="p-4">
+        {item.from_date?.split("T")[0] || "-"}
+      </td>
 
-                          <td className="p-4">
-                            {item.to_date?.split(
-                              "T"
-                            )[0] || "-"}
-                          </td>
+      <td className="p-4">
+        {item.to_date?.split("T")[0] || "-"}
+      </td>
 
-                          <td className="p-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${
-                                item.status ===
-                                "Approved"
-                                  ? "bg-green-500"
-                                  : item.status ===
-                                    "Rejected"
-                                  ? "bg-red-500"
-                                  : "bg-yellow-500"
-                              }`}
-                            >
-                              {item.status}
-                            </span>
-                          </td>
+      <td className="p-4">
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${
+            item.status === "Approved"
+              ? "bg-green-500"
+              : item.status === "Rejected"
+              ? "bg-red-500"
+              : "bg-yellow-500"
+          }`}
+        >
+          {item.status}
+        </span>
+      </td>
 
-                          {(role === "admin" || role === "hr") && (
-                            <td className="p-4">
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() =>
-                                    approveLeave(
-                                      item.id
-                                    )
-                                  }
-                                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm"
-                                >
-                                  Approve
-                                </button>
+      {(role === "admin" || role === "hr") && (
+        <td className="p-4">
+          <div className="flex gap-2">
+            <button
+              onClick={() => approveLeave(item.id)}
+              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm"
+            >
+              Approve
+            </button>
 
-                                <button
-                                  onClick={() =>
-                                    rejectLeave(
-                                      item.id
-                                    )
-                                  }
-                                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm"
-                                >
-                                  Reject
-                                </button>
-                              </div>
-                            </td>
-                          )}
-                        </tr>
-                      )
-                    )}
-                  </tbody>
+            <button
+              onClick={() => rejectLeave(item.id)}
+              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm"
+            >
+              Reject
+            </button>
+          </div>
+        </td>
+      )}
+    </tr>
+  ))}
+</tbody>
                 </table>
               </div>
             )}

@@ -56,9 +56,20 @@ localStorage.removeItem("token");
 window.location.href = "/";
 };
 
-return ( <div className="bg-gray-100 min-h-screen p-6"> <div className="flex justify-between items-center mb-8"> <h1 className="text-4xl font-bold text-gray-800">
-Dashboard </h1>
+const pageTitleStyle = {
+  fontSize: "32px",
+  fontWeight: "700",
+  color: "#111827",
+  marginBottom: "24px",
+};
 
+return ( 
+   <div className="bg-gray-100 min-h-screen p-6"> 
+   <div className="flex justify-between items-center mb-8"> 
+    
+   <h1 style={pageTitleStyle}>
+   Dashboard
+   </h1>
 ```
     <button
       onClick={logout}
