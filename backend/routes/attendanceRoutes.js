@@ -1,9 +1,10 @@
 import express from "express";
 import pool from "../db.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
+
 const router = express.Router();
 
-// GET ALL ATTENDANCE
+// GET ATTENDANCE
 router.get("/", authMiddleware, async (req, res) => {
   try {
     let result;
@@ -38,104 +39,114 @@ router.get("/", authMiddleware, async (req, res) => {
     });
   }
 });
+
 // CLOCK IN
-router.post("/clock-in", async (req, res) => {
-  try {
-    const { employee_id } = req.body;
+router.post(
+  "/clock-in",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const employee_id =
+        req.user.employee_id;
 
-    // Get employee name
-    const employee = await pool.query(
-      `
-      SELECT name
-      FROM employees
-      WHERE employee_code = $1
-      `,
-      [employee_id]
-    );
+      const employee = await pool.query(
+        `
+        SELECT name
+        FROM employees
+        WHERE employee_code = $1
+        `,
+        [employee_id]
+      );
 
-    if (employee.rows.length === 0) {
-      return res.status(404).json({
+      if (employee.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Employee not found",
+        });
+      }
+
+      const employee_name =
+        employee.rows[0].name;
+
+      await pool.query(
+        `
+        INSERT INTO attendance
+        (
+          employee_id,
+          employee_name,
+          date,
+          clock_in,
+          status
+        )
+        VALUES
+        (
+          $1,
+          $2,
+          CURRENT_DATE,
+          NOW(),
+          'Present'
+        )
+        `,
+        [employee_id, employee_name]
+      );
+
+      res.json({
+        success: true,
+        message: "Clock In Successful",
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
         success: false,
-        message: "Employee not found",
+        message: "Clock In Failed",
       });
     }
-
-    const employee_name =
-      employee.rows[0].name;
-
-    await pool.query(
-      `
-      INSERT INTO attendance
-      (
-        employee_id,
-        employee_name,
-        date,
-        clock_in,
-        status
-      )
-      VALUES
-      (
-        $1,
-        $2,
-        CURRENT_DATE,
-        NOW(),
-        'Present'
-      )
-      `,
-      [employee_id, employee_name]
-    );
-
-    res.json({
-      success: true,
-      message: "Clock In Successful",
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Clock In Failed",
-    });
   }
-});
+);
 
 // CLOCK OUT
-router.post("/clock-out", async (req, res) => {
-  try {
-    const { employee_id } = req.body;
+router.post(
+  "/clock-out",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const employee_id =
+        req.user.employee_id;
 
-    const result = await pool.query(
-      `
-      UPDATE attendance
-      SET clock_out = NOW()
-      WHERE employee_id = $1
-      AND date = CURRENT_DATE
-      AND clock_out IS NULL
-      RETURNING *
-      `,
-      [employee_id]
-    );
+      const result = await pool.query(
+        `
+        UPDATE attendance
+        SET clock_out = NOW()
+        WHERE employee_id = $1
+        AND date = CURRENT_DATE
+        AND clock_out IS NULL
+        RETURNING *
+        `,
+        [employee_id]
+      );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "No active attendance record found",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Clock Out Successful",
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({
         success: false,
-        message:
-          "No active attendance record found",
+        message: "Clock Out Failed",
       });
     }
-
-    res.json({
-      success: true,
-      message: "Clock Out Successful",
-    });
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      message: "Clock Out Failed",
-    });
   }
-});
+);
 
 export default router;

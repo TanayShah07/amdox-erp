@@ -51,6 +51,7 @@ export default function Payroll() {
           basic_salary: basicSalary,
           bonus,
           deductions,
+          pay_date: new Date(),
         }),
       });
 

@@ -63,98 +63,60 @@ export default function Attendance() {
   };
 
   // CLOCK IN
-  const clockIn = async () => {
-    if (!employeeId) {
-      toast.error("Enter Employee ID");
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        "http://localhost:5000/attendance/clock-in",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Authorization: `Bearer ${token}`,
-          },
-
-          body: JSON.stringify({
-            employee_id: employeeId,
-          }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (data.success) {
-        toast.success(data.message);
-
-        setEmployeeId("");
-
-        fetchAttendance();
-      } else {
-        toast.error(
-          data.message ||
-            "Clock In failed"
-        );
+const clockIn = async () => {
+  try {
+    const res = await fetch(
+      "http://localhost:5000/attendance/clock-in",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } catch (err) {
-      console.log(err);
+    );
 
-      toast.error("Clock In failed");
+    const data = await res.json();
+
+    if (data.success) {
+      toast.success(data.message);
+      fetchAttendance();
+    } else {
+      toast.error(data.message);
     }
-  };
+  } catch (err) {
+    console.log(err);
+    toast.error("Clock In failed");
+  }
+};
 
   // CLOCK OUT
-  const clockOut = async () => {
-    if (!employeeId) {
-      toast.error("Enter Employee ID");
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        "http://localhost:5000/attendance/clock-out",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Authorization: `Bearer ${token}`,
-          },
-
-          body: JSON.stringify({
-            employee_id: employeeId,
-          }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (data.success) {
-        toast.success(data.message);
-
-        setEmployeeId("");
-
-        fetchAttendance();
-      } else {
-        toast.error(
-          data.message ||
-            "Clock Out failed"
-        );
+const clockOut = async () => {
+  try {
+    const res = await fetch(
+      "http://localhost:5000/attendance/clock-out",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } catch (err) {
-      console.log(err);
+    );
 
-      toast.error("Clock Out failed");
+    const data = await res.json();
+
+    if (data.success) {
+      toast.success(data.message);
+      fetchAttendance();
+    } else {
+      toast.error(data.message);
     }
-  };
+  } catch (err) {
+    console.log(err);
+    toast.error("Clock Out failed");
+  }
+};
 
   useEffect(() => {
     fetchAttendance();

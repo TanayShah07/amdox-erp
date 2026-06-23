@@ -1,198 +1,239 @@
+import { useEffect, useState } from "react";
 import {
-BarChart,
-Bar,
-XAxis,
-YAxis,
-Tooltip,
-ResponsiveContainer,
-PieChart,
-Pie,
-Cell,
-LineChart,
-Line,
-CartesianGrid,
-Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  CartesianGrid,
+  Legend,
 } from "recharts";
 
 export default function Dashboard() {
-const employeesCount = 75;
-const totalSalary = 150000;
-const totalProjects = 12;
+  const [stats, setStats] = useState({
+    employees: 0,
+    salary: 0,
+    projects: 0,
+    completedProjects: 0,
+    pendingProjects: 0,
+  });
 
-const employeeGrowthData = [
-{ month: "Jan", employees: 20 },
-{ month: "Feb", employees: 35 },
-{ month: "Mar", employees: 45 },
-{ month: "Apr", employees: 60 },
-{ month: "May", employees: 75 },
-];
+  const [employeeGrowthData, setEmployeeGrowthData] =
+    useState([]);
 
-const salaryData = [
-{ month: "Jan", salary: 40000 },
-{ month: "Feb", salary: 60000 },
-{ month: "Mar", salary: 75000 },
-{ month: "Apr", salary: 85000 },
-{ month: "May", salary: 150000 },
-];
+  const fetchDashboardStats = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/dashboard-stats"
+      );
 
-const projectData = [
-{
-name: "Completed",
-value: 70,
-},
-{
-name: "Pending",
-value: 30,
-},
-];
+      const data = await res.json();
 
-const COLORS = [
-"#10B981",
-"#F59E0B",
-];
+      setStats(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
-const logout = () => {
-localStorage.removeItem("token");
-window.location.href = "/";
-};
+  const fetchEmployeeGrowth = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/employee-growth"
+      );
 
-const pageTitleStyle = {
-  fontSize: "32px",
-  fontWeight: "700",
-  color: "#111827",
-  marginBottom: "24px",
-};
+      const data = await res.json();
 
-return ( 
-   <div className="bg-gray-100 min-h-screen p-6"> 
-   <div className="flex justify-between items-center mb-8"> 
-    
-   <h1 style={pageTitleStyle}>
-   Dashboard
-   </h1>
-```
-    <button
-      onClick={logout}
-      className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl shadow"
-    >
-      Logout
-    </button>
-  </div>
+      setEmployeeGrowthData(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div className="bg-white p-6 rounded-2xl shadow">
-      <h3 className="text-gray-500">
-        Total Employees
-      </h3>
+  useEffect(() => {
+    fetchDashboardStats();
+    fetchEmployeeGrowth();
+    fetchSalaryOverview();
+  }, []);
 
-      <p className="text-3xl font-bold text-blue-600">
-        {employeesCount}
-      </p>
-    </div>
+  const [salaryData, setSalaryData] =
+    useState([]);
+   
+   const fetchSalaryOverview = async () => {
+  try {
+    const res = await fetch(
+      "http://localhost:5000/api/salary-overview"
+    );
 
-    <div className="bg-white p-6 rounded-2xl shadow">
-      <h3 className="text-gray-500">
-        Total Salary
-      </h3>
+    const data = await res.json();
 
-      <p className="text-3xl font-bold text-green-600">
-        ₹ {totalSalary}
-      </p>
-    </div>
+    setSalaryData(data);
+  } catch (err) {
+    console.log(err);
+  }
+}; 
 
-    <div className="bg-white p-6 rounded-2xl shadow">
-      <h3 className="text-gray-500">
-        Total Projects
-      </h3>
+  const projectData = [
+    {
+      name: "Completed",
+      value: stats.completedProjects,
+    },
+    {
+      name: "Pending",
+      value: stats.pendingProjects,
+    },
+  ];
 
-      <p className="text-3xl font-bold text-purple-600">
-        {totalProjects}
-      </p>
-    </div>
-  </div>
+  const COLORS = [
+    "#10B981",
+    "#F59E0B",
+  ];
 
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div className="bg-white p-6 rounded-2xl shadow">
-      <h2 className="text-xl font-bold mb-4">
-        Employee Growth
-      </h2>
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    window.location.href = "/";
+  };
 
-      <ResponsiveContainer
-        width="100%"
-        height={300}
-      >
-        <BarChart data={employeeGrowthData}>
-          <XAxis dataKey="month" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar
-            dataKey="employees"
-            fill="#3B82F6"
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+  const pageTitleStyle = {
+    fontSize: "32px",
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: "24px",
+  };
 
-    <div className="bg-white p-6 rounded-2xl shadow">
-      <h2 className="text-xl font-bold mb-4">
-        Salary Overview
-      </h2>
+  return (
+    <div className="bg-gray-100 min-h-screen p-6">
+      <div className="flex justify-between items-center mb-8">
+        <h1 style={pageTitleStyle}>
+          Dashboard
+        </h1>
 
-      <ResponsiveContainer
-        width="100%"
-        height={300}
-      >
-        <LineChart data={salaryData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="month" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line
-            type="monotone"
-            dataKey="salary"
-            stroke="#10B981"
-            strokeWidth={3}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+        <button
+          onClick={logout}
+          className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl shadow"
+        >
+          Logout
+        </button>
+      </div>
 
-    <div className="bg-white p-6 rounded-2xl shadow lg:col-span-2">
-      <h2 className="text-xl font-bold mb-4">
-        Project Status
-      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-2xl shadow">
+          <h3 className="text-gray-500">
+            Total Employees
+          </h3>
 
-      <ResponsiveContainer
-        width="100%"
-        height={350}
-      >
-        <PieChart>
-          <Pie
-            data={projectData}
-            dataKey="value"
-            outerRadius={120}
-            label
+          <p className="text-3xl font-bold text-blue-600">
+            {stats.employees}
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow">
+          <h3 className="text-gray-500">
+            Total Salary
+          </h3>
+
+          <p className="text-3xl font-bold text-green-600">
+            ₹ {stats.salary}
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow">
+          <h3 className="text-gray-500">
+            Total Projects
+          </h3>
+
+          <p className="text-3xl font-bold text-purple-600">
+            {stats.projects}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow">
+          <h2 className="text-xl font-bold mb-4">
+            Employee Growth
+          </h2>
+
+          <ResponsiveContainer
+            width="100%"
+            height={300}
           >
-            {projectData.map(
-              (_, index) => (
-                <Cell
-                  key={index}
-                  fill={COLORS[index]}
-                />
-              )
-            )}
-          </Pie>
+            <BarChart data={employeeGrowthData}>
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar
+                dataKey="employees"
+                fill="#3B82F6"
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
 
-          <Tooltip />
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
+        <div className="bg-white p-6 rounded-2xl shadow">
+          <h2 className="text-xl font-bold mb-4">
+            Salary Overview
+          </h2>
+
+          <ResponsiveContainer
+            width="100%"
+            height={300}
+          >
+            <LineChart data={salaryData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="salary"
+                stroke="#10B981"
+                strokeWidth={3}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow lg:col-span-2">
+          <h2 className="text-xl font-bold mb-4">
+            Project Status
+          </h2>
+
+          <ResponsiveContainer
+            width="100%"
+            height={350}
+          >
+            <PieChart>
+              <Pie
+                data={projectData}
+                dataKey="value"
+                outerRadius={120}
+                label
+              >
+                {projectData.map(
+                  (_, index) => (
+                    <Cell
+                      key={index}
+                      fill={COLORS[index]}
+                    />
+                  )
+                )}
+              </Pie>
+
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-
-
-);
+  );
 }

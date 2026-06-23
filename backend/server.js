@@ -90,6 +90,117 @@ app.get("/api/profile-stats", async (req, res) => {
   }
 });
 
+app.get("/api/dashboard-stats", async (req, res) => {
+  try {
+    const employees = await pool.query(
+      "SELECT COUNT(*) FROM employees"
+    );
+
+    const salary = await pool.query(
+      "SELECT COALESCE(SUM(salary),0) FROM employees"
+    );
+
+    const projects = await pool.query(
+      "SELECT COUNT(*) FROM projects"
+    );
+
+    const completedProjects = await pool.query(
+      `
+      SELECT COUNT(*) 
+      FROM projects
+      WHERE LOWER(status) = 'completed'
+      `
+    );
+
+    const pendingProjects = await pool.query(
+      `
+      SELECT COUNT(*) 
+      FROM projects
+      WHERE LOWER(status) != 'completed'
+      `
+    );
+
+    res.json({
+      employees: Number(
+        employees.rows[0].count
+      ),
+
+      salary: Number(
+        salary.rows[0].coalesce
+      ),
+
+      projects: Number(
+        projects.rows[0].count
+      ),
+
+      completedProjects: Number(
+        completedProjects.rows[0].count
+      ),
+
+      pendingProjects: Number(
+        pendingProjects.rows[0].count
+      ),
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: "Server Error",
+    });
+  }
+});
+
+app.get("/api/employee-growth", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        employee_code
+      FROM employees
+      ORDER BY id ASC
+    `);
+
+    const data = result.rows.map(
+      (_, index) => ({
+        month: `Emp ${index + 1}`,
+        employees: index + 1,
+      })
+    );
+
+    res.json(data);
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: "Server Error",
+    });
+  }
+});
+
+app.get("/api/salary-overview", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        employee_code,
+        salary
+      FROM employees
+      ORDER BY employee_code
+    `);
+
+    res.json(
+      result.rows.map((row) => ({
+        month: row.employee_code,
+        salary: Number(row.salary),
+      }))
+    );
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: "Server Error",
+    });
+  }
+});
+
 app.use((err, req, res, next) => {
   console.error("🔥 Server Error:", err.message);
   res.status(500).json({

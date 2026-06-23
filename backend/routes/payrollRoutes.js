@@ -26,47 +26,28 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const {
-      employee_code,
+      employee_id,
+      employee_name,
       basic_salary,
       bonus,
-      deduction,
+      deductions,
       pay_date,
     } = req.body;
 
-    // Get employee name
-    const employee = await pool.query(
-      `
-      SELECT name
-      FROM employees
-      WHERE employee_code = $1
-      `,
-      [employee_code]
-    );
-
-    if (employee.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Employee not found",
-      });
-    }
-
-    const employee_name =
-      employee.rows[0].name;
-
     const net_salary =
-      Number(basic_salary) +
+      Number(basic_salary || 0) +
       Number(bonus || 0) -
-      Number(deduction || 0);
+      Number(deductions || 0);
 
     const result = await pool.query(
       `
       INSERT INTO payroll
       (
-        employee_code,
+        employee_id,
         employee_name,
         basic_salary,
         bonus,
-        deduction,
+        deductions,
         net_salary,
         pay_date
       )
@@ -77,13 +58,13 @@ router.post("/", async (req, res) => {
       RETURNING *
       `,
       [
-        employee_code,
+        employee_id,
         employee_name,
         basic_salary,
         bonus,
-        deduction,
+        deductions,
         net_salary,
-        pay_date,
+        pay_date || new Date(),
       ]
     );
 
@@ -97,7 +78,7 @@ router.post("/", async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Payroll Add Failed",
+      message: err.message,
     });
   }
 });
