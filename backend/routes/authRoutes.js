@@ -1,7 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { pool } from "../server.js";
+import pool from "../db.js";
 
 const router = express.Router();
 
@@ -38,6 +38,41 @@ router.post("/register", async (req, res) => {
 
     const user = result.rows[0];
 
+const employeeCode =
+  role === "hr"
+    ? `HR${String(user.id).padStart(3, "0")}`
+    : `EMP${String(user.id).padStart(3, "0")}`;
+
+await pool.query(
+  `
+  INSERT INTO employees
+  (
+    employee_code,
+    name,
+    role,
+    salary,
+    projects
+  )
+  VALUES
+  ($1,$2,$3,$4,$5)
+  `,
+  [
+    employeeCode,
+    name,
+    role || "employee",
+    0,
+    0,
+  ]
+);
+
+await pool.query(
+  `
+  UPDATE users
+  SET employee_id = $1
+  WHERE id = $2
+  `,
+  [employeeCode, user.id]
+);
     const token = jwt.sign(
       {
         id: user.id,
@@ -111,6 +146,7 @@ router.post("/login", async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        employee_id: user.employee_id,
       },
     });
   } catch (err) {

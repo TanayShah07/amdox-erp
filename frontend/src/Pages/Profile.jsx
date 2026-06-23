@@ -5,22 +5,27 @@ export default function Profile() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [password, setPassword] = useState("");
-  const [newPassword, setNewPassword] =
-    useState("");
+  const [newPassword, setNewPassword] = useState("");
 
-  const [darkMode, setDarkMode] =
-    useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
-  const [emailNotify, setEmailNotify] =
-    useState(true);
+  const [emailNotify, setEmailNotify] = useState(true);
+  const [salaryNotify, setSalaryNotify] = useState(true);
+  const [leaveNotify, setLeaveNotify] = useState(true);
 
-  const [salaryNotify, setSalaryNotify] =
-    useState(true);
+  const [stats, setStats] = useState({
+    attendance: 0,
+    leaves: 0,
+    projects: 0,
+    salary: 0,
+  });
 
-  const [leaveNotify, setLeaveNotify] =
-    useState(true);
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   const fetchProfile = async () => {
     const token = localStorage.getItem("token");
@@ -31,71 +36,44 @@ export default function Profile() {
     }
 
     try {
-     const res = await fetch(
-  "http://localhost:5000/api/user/profile",
-  {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-);
-
-     if (res.status === 401) {
-  localStorage.removeItem("token");
-  navigate("/");
-  return;
-}
-
-if (!res.ok) {
-  console.error("Server error:", res.status);
-  return;
-}
-
-      const data = await res.json();
-      console.log("USER DATA:", data.user);
-
-      setUser(data.user);
-
-      fetchStats(data.user.employee_code);
-
-    } catch {
-      localStorage.removeItem("token");
-      navigate("/");
-    }
-  };
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchStats = async (employeeId) => {
-    try {
       const res = await fetch(
-        `http://localhost:5000/api/profile-stats?employeeCode=${employeeId}`
+        "http://localhost:5000/api/user/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       const data = await res.json();
 
-      console.log("STATS:", data);
+      if (!res.ok) {
+        localStorage.clear();
+        navigate("/");
+        return;
+      }
 
-      setStats(data);
+      setUser(data.user);
+
+      setStats({
+        attendance: 0,
+        leaves: 0,
+        projects: data.user.projects || 0,
+        salary: data.user.salary || 0,
+      });
+
     } catch (err) {
       console.log(err);
+      navigate("/");
+    } finally {
+      setLoading(false);
     }
   };
 
- const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("role");
-  navigate("/");
-};
-
-const [stats, setStats] = useState({
-  attendance: 0,
-  leaves: 0,
-  projects: 0,
-  salary: 0,
-});
+  const logout = () => {
+    localStorage.clear();
+    navigate("/");
+  };
 
   const changePassword = async () => {
     const token = localStorage.getItem("token");
@@ -111,8 +89,7 @@ const [stats, setStats] = useState({
         {
           method: "POST",
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
@@ -126,23 +103,28 @@ const [stats, setStats] = useState({
 
       if (data.success) {
         alert("Password updated");
-
         setPassword("");
         setNewPassword("");
-
       } else {
         alert("Wrong password");
       }
-
     } catch {
       alert("Server error");
     }
   };
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="min-h-screen flex justify-center items-center">
         Loading...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        Profile Not Found
       </div>
     );
   }
@@ -157,10 +139,7 @@ const [stats, setStats] = useState({
     >
       <div className="max-w-6xl mx-auto">
 
-        {/* TOP BAR */}
-
         <div className="flex justify-between items-center mb-6">
-
           <button
             onClick={() => navigate(-1)}
             className="text-blue-500 font-medium"
@@ -169,104 +148,71 @@ const [stats, setStats] = useState({
           </button>
 
           <h1 className="text-4xl font-bold">
-            My Profile
+            Settings Dashboard
           </h1>
-
         </div>
-
-        {/* PROFILE CARD */}
 
         <div
           className={`rounded-2xl p-6 shadow-lg mb-6 ${
-            darkMode
-              ? "bg-gray-800"
-              : "bg-white"
+            darkMode ? "bg-gray-800" : "bg-white"
           }`}
         >
-
           <div className="flex items-center gap-6">
-
             <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-4xl text-white font-bold">
               {user.name?.charAt(0).toUpperCase()}
             </div>
 
             <div>
-
               <h2 className="text-3xl font-bold">
                 {user.name}
               </h2>
 
-              <p className="text-gray-500 mb-4">
+              <p className="text-gray-500">
                 {user.email}
               </p>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <p className="mt-2">
+                Employee ID:
+                <span className="font-bold ml-2">
+                  {user.employee_code || "N/A"}
+                </span>
+              </p>
 
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-gray-500 text-sm">
-                    Employee ID
-                  </p>
-
-                  <p className="font-semibold">
-                    {user.employee_code || "N/A"}
-                  </p>
-                </div>
-
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-gray-500 text-sm">
-                    Role
-                  </p>
-
-                  <p className="font-semibold uppercase">
-                    {user.role}
-                  </p>
-                </div>
-
-              </div>
-
+              <p>
+                Role:
+                <span className="font-bold ml-2 uppercase">
+                  {user.role}
+                </span>
+              </p>
             </div>
           </div>
         </div>
 
-        {/* STATS */}
-
         <div className="grid md:grid-cols-4 gap-4 mb-6">
 
           <div className="bg-blue-500 text-white p-6 rounded-2xl shadow">
-            <h3 className="text-lg">
-              Attendance
-            </h3>
-
+            <h3 className="text-lg">Attendance</h3>
             <p className="text-3xl font-bold">
               {stats.attendance}
             </p>
           </div>
 
           <div className="bg-green-500 text-white p-6 rounded-2xl shadow">
-            <h3 className="text-lg">
-              Leaves
-            </h3>
-
+            <h3 className="text-lg">Leaves</h3>
             <p className="text-3xl font-bold">
               {stats.leaves}
             </p>
           </div>
 
           <div className="bg-yellow-500 text-white p-6 rounded-2xl shadow">
-            <h3 className="text-lg">
-              Projects
-            </h3>
-
+            <h3 className="text-lg">Projects</h3>
             <p className="text-3xl font-bold">
               {stats.projects}
             </p>
           </div>
 
           <div className="bg-purple-500 text-white p-6 rounded-2xl shadow">
-            <h3 className="text-lg">
-              Salary
-            </h3>
-
+            <h3 className="text-lg">Salary</h3>
             <p className="text-3xl font-bold">
               ₹{stats.salary}
             </p>
@@ -274,16 +220,7 @@ const [stats, setStats] = useState({
 
         </div>
 
-        {/* SECURITY */}
-
-        <div
-          className={`rounded-2xl p-6 shadow-lg mb-6 ${
-            darkMode
-              ? "bg-gray-800"
-              : "bg-white"
-          }`}
-        >
-
+        <div className={`rounded-2xl p-6 shadow-lg mb-6 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
           <h2 className="text-2xl font-bold mb-4">
             Security
           </h2>
@@ -293,9 +230,7 @@ const [stats, setStats] = useState({
             placeholder="Current Password"
             className="w-full border p-3 rounded-lg mb-4 text-black"
             value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
+            onChange={(e) => setPassword(e.target.value)}
           />
 
           <input
@@ -303,9 +238,7 @@ const [stats, setStats] = useState({
             placeholder="New Password"
             className="w-full border p-3 rounded-lg mb-4 text-black"
             value={newPassword}
-            onChange={(e) =>
-              setNewPassword(e.target.value)
-            }
+            onChange={(e) => setNewPassword(e.target.value)}
           />
 
           <button
@@ -314,31 +247,18 @@ const [stats, setStats] = useState({
           >
             Change Password
           </button>
-
         </div>
 
-        {/* APPEARANCE */}
-
-        <div
-          className={`rounded-2xl p-6 shadow-lg mb-6 ${
-            darkMode
-              ? "bg-gray-800"
-              : "bg-white"
-          }`}
-        >
-
+        <div className={`rounded-2xl p-6 shadow-lg mb-6 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
           <h2 className="text-2xl font-bold mb-4">
             Appearance
           </h2>
 
           <div className="flex items-center justify-between">
-
             <p>Dark Mode</p>
 
             <button
-              onClick={() =>
-                setDarkMode(!darkMode)
-              }
+              onClick={() => setDarkMode(!darkMode)}
               className={`px-6 py-2 rounded-full text-white ${
                 darkMode
                   ? "bg-green-500"
@@ -347,102 +267,45 @@ const [stats, setStats] = useState({
             >
               {darkMode ? "ON" : "OFF"}
             </button>
-
           </div>
         </div>
 
-        {/* NOTIFICATIONS */}
-
-        <div
-          className={`rounded-2xl p-6 shadow-lg mb-6 ${
-            darkMode
-              ? "bg-gray-800"
-              : "bg-white"
-          }`}
-        >
-
+        <div className={`rounded-2xl p-6 shadow-lg mb-6 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
           <h2 className="text-2xl font-bold mb-4">
             Notifications
           </h2>
 
           <div className="space-y-4">
-
             <div className="flex justify-between">
               <p>Email Notifications</p>
-
               <input
                 type="checkbox"
                 checked={emailNotify}
-                onChange={() =>
-                  setEmailNotify(!emailNotify)
-                }
+                onChange={() => setEmailNotify(!emailNotify)}
               />
             </div>
 
             <div className="flex justify-between">
               <p>Salary Notifications</p>
-
               <input
                 type="checkbox"
                 checked={salaryNotify}
-                onChange={() =>
-                  setSalaryNotify(
-                    !salaryNotify
-                  )
-                }
+                onChange={() => setSalaryNotify(!salaryNotify)}
               />
             </div>
 
             <div className="flex justify-between">
               <p>Leave Notifications</p>
-
               <input
                 type="checkbox"
                 checked={leaveNotify}
-                onChange={() =>
-                  setLeaveNotify(!leaveNotify)
-                }
+                onChange={() => setLeaveNotify(!leaveNotify)}
               />
             </div>
-
           </div>
         </div>
 
-        {/* ACTIVITY */}
-
-        <div
-          className={`rounded-2xl p-6 shadow-lg mb-6 ${
-            darkMode
-              ? "bg-gray-800"
-              : "bg-white"
-          }`}
-        >
-
-          <h2 className="text-2xl font-bold mb-4">
-            Recent Activity
-          </h2>
-
-          <ul className="space-y-3">
-
-            <li>
-              ✅ Attendance marked today
-            </li>
-
-            <li>
-              ✅ Leave applied successfully
-            </li>
-
-            <li>
-              ✅ Payroll generated
-            </li>
-
-          </ul>
-        </div>
-
-        {/* DANGER ZONE */}
-
         <div className="bg-red-100 border border-red-300 p-6 rounded-2xl">
-
           <h2 className="text-2xl font-bold text-red-600 mb-4">
             Danger Zone
           </h2>
@@ -453,8 +316,8 @@ const [stats, setStats] = useState({
           >
             Sign Out
           </button>
-
         </div>
+
       </div>
     </div>
   );

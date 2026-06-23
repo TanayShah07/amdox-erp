@@ -30,7 +30,7 @@ export const handleChat = async (req, res) => {
   try {
     const { message } = req.body;
 
-    if (!message) {
+    if (!message?.trim()) {
       return res.status(400).json({
         reply: "Please enter a message.",
       });
@@ -38,7 +38,6 @@ export const handleChat = async (req, res) => {
 
     const lowerMessage = message.toLowerCase();
 
-    // Greetings
     if (
       lowerMessage === "hi" ||
       lowerMessage === "hello" ||
@@ -50,7 +49,6 @@ export const handleChat = async (req, res) => {
       });
     }
 
-    // Project Info
     if (
       lowerMessage.includes("my project") ||
       lowerMessage.includes("about project") ||
@@ -62,7 +60,6 @@ export const handleChat = async (req, res) => {
       });
     }
 
-    // Employee Count
     if (
       lowerMessage.includes("how many employees") ||
       lowerMessage.includes("employee count") ||
@@ -77,7 +74,6 @@ export const handleChat = async (req, res) => {
       });
     }
 
-    // Leave Module
     if (
       lowerMessage.includes("leave") &&
       !lowerMessage.includes("employee")
@@ -88,7 +84,6 @@ export const handleChat = async (req, res) => {
       });
     }
 
-    // Attendance Module
     if (lowerMessage.includes("attendance")) {
       return res.json({
         reply:
@@ -96,7 +91,6 @@ export const handleChat = async (req, res) => {
       });
     }
 
-    // Payroll Module
     if (lowerMessage.includes("payroll")) {
       return res.json({
         reply:
@@ -104,7 +98,6 @@ export const handleChat = async (req, res) => {
       });
     }
 
-    // Projects Module
     if (lowerMessage.includes("project")) {
       return res.json({
         reply:
@@ -112,25 +105,41 @@ export const handleChat = async (req, res) => {
       });
     }
 
-    // Gemini AI Response
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: PROJECT_CONTEXT + "\n\nUser: " + message,
       });
 
       return res.json({
         reply: response.text,
       });
-    } catch (geminiError) {
-      console.error("Gemini Error:", geminiError);
+    } catch (error25) {
+      console.log(
+        "Gemini 2.5 unavailable, trying Gemini 2.0..."
+      );
 
-      return res.json({
-        reply:
-          "I'm currently unable to reach the AI service. Please try again in a few moments.",
-      });
+      try {
+        const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: PROJECT_CONTEXT + "\n\nUser: " + message,
+        });
+
+        return res.json({
+          reply: response.text,
+        });
+      } catch (error20) {
+        console.error(
+          "Gemini 2.0 also failed:",
+          error20
+        );
+
+        return res.json({
+          reply:
+            "I'm currently unable to reach the AI service. Please try again in a few moments.",
+        });
+      }
     }
-
   } catch (error) {
     console.error("Chatbot Error:", error);
 
