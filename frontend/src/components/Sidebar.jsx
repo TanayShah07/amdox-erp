@@ -1,86 +1,312 @@
 import { Link, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Users,
+  FolderKanban,
+  CalendarCheck,
+  FileText,
+  Wallet,
+  Package,
+  Receipt,
+  User,
+  LogOut,
+  ClipboardList,
+} from "lucide-react";
 
 export default function Sidebar() {
   const location = useLocation();
-  const role = localStorage.getItem("role");
 
-  let menus = [];
+  const role = localStorage.getItem("role") || "employee";
 
-  if (role === "employee") {
-    menus = [
-      { name: "Dashboard", path: "/dashboard" },
-      { name: "My Projects", path: "/my-projects" },
-      { name: "Attendance", path: "/attendance" },
-      { name: "Leaves", path: "/leaves" },
-      { name: "Profile", path: "/profile" },
-    ];
-  } else if (role === "hr") {
-    menus = [
-      { name: "Dashboard", path: "/dashboard" },
-      { name: "Employees", path: "/employees" },
-      { name: "Projects", path: "/projects" },
-      { name: "Attendance", path: "/attendance" },
-      { name: "Leaves", path: "/leaves" },
-      { name: "Ledger", path: "/ledger" },
-      { name: "Inventory", path: "/inventory" },
-      { name: "Invoices", path: "/invoices" },
-      { name: "Profile", path: "/profile" },
-    ];
-  } else {
-    menus = [
-      { name: "Dashboard", path: "/dashboard" },
-      { name: "Employees", path: "/employees" },
-      { name: "Projects", path: "/projects" },
-      { name: "Attendance", path: "/attendance" },
-      { name: "Leaves", path: "/leaves" },
-      { name: "Payroll", path: "/payroll" },
-      { name: "Ledger", path: "/ledger" },
-      { name: "Inventory", path: "/inventory" },
-      { name: "Invoices", path: "/invoices" },
-      { name: "Profile", path: "/profile" },
-    ];
-  }
+  const menuConfig = {
+    employee: [
+      {
+        name: "Dashboard",
+        path: "/dashboard",
+        icon: LayoutDashboard,
+      },
+      {
+        name: "My Projects",
+        path: "/my-projects",
+        icon: FolderKanban,
+      },
+      {
+        name: "Attendance",
+        path: "/attendance",
+        icon: CalendarCheck,
+      },
+      {
+        name: "Leaves",
+        path: "/leaves",
+        icon: FileText,
+      },
+      {
+        name: "Profile",
+        path: "/profile",
+        icon: User,
+      },
+    ],
+
+    hr: [
+      {
+        name: "Dashboard",
+        path: "/dashboard",
+        icon: LayoutDashboard,
+      },
+      {
+        name: "Employees",
+        path: "/employees",
+        icon: Users,
+      },
+      {
+        name: "Projects",
+        path: "/projects",
+        icon: FolderKanban,
+      },
+      {
+        name: "Attendance",
+        path: "/attendance",
+        icon: CalendarCheck,
+      },
+      {
+        name: "Leaves",
+        path: "/leaves",
+        icon: FileText,
+      },
+      {
+        name: "Ledger",
+        path: "/ledger",
+        icon: Wallet,
+      },
+      {
+        name: "Inventory",
+        path: "/inventory",
+        icon: Package,
+      },
+      {
+        name: "Invoices",
+        path: "/invoices",
+        icon: Receipt,
+      },
+      {
+        name: "Profile",
+        path: "/profile",
+        icon: User,
+      },
+    ],
+
+    admin: [
+      {
+        name: "Dashboard",
+        path: "/dashboard",
+        icon: LayoutDashboard,
+      },
+      {
+        name: "Employees",
+        path: "/employees",
+        icon: Users,
+      },
+      {
+        name: "Projects",
+        path: "/projects",
+        icon: FolderKanban,
+      },
+      {
+        name: "Attendance",
+        path: "/attendance",
+        icon: CalendarCheck,
+      },
+      {
+        name: "Leaves",
+        path: "/leaves",
+        icon: FileText,
+      },
+      {
+        name: "Payroll",
+        path: "/payroll",
+        icon: Wallet,
+      },
+      {
+        name: "Ledger",
+        path: "/ledger",
+        icon: ClipboardList,
+      },
+      {
+        name: "Inventory",
+        path: "/inventory",
+        icon: Package,
+      },
+      {
+        name: "Invoices",
+        path: "/invoices",
+        icon: Receipt,
+      },
+      {
+        name: "Profile",
+        path: "/profile",
+        icon: User,
+      },
+    ],
+  };
+
+
+  const menus = menuConfig[role] || menuConfig.employee;
+
 
   const logout = () => {
     localStorage.clear();
     window.location.href = "/";
   };
 
+
   return (
-    <div className="hidden md:flex flex-col w-72 bg-slate-900 text-white h-screen fixed left-0 top-0 shadow-xl">
-      <div className="p-6 border-b border-slate-700">
-        <h1 className="text-2xl font-bold tracking-wide">
-          ERP System
+    <aside className="
+      fixed
+      left-0
+      top-0
+      h-screen
+      w-72
+      bg-slate-950
+      text-white
+      flex
+      flex-col
+      shadow-2xl
+    ">
+
+      {/* Brand */}
+
+      <div className="
+        p-6
+        border-b
+        border-slate-800
+      ">
+        <h1 className="
+          text-2xl
+          font-bold
+          tracking-wide
+        ">
+          🚀 AMDox ERP
         </h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Management Portal
+
+        <p className="
+          text-sm
+          text-slate-400
+          mt-1
+        ">
+          Management System
         </p>
       </div>
 
-      <div className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {menus.map((menu, index) => (
-          <Link
-            key={index}
-            to={menu.path}
-            className={`block px-4 py-3 rounded-xl transition-all duration-300 ${
-              location.pathname === menu.path
-                ? "bg-blue-600 text-white shadow-md"
-                : "text-slate-300 hover:bg-slate-800 hover:text-white"
-            }`}
-          >
-            {menu.name}
-          </Link>
-        ))}
+
+      {/* Role */}
+
+      <div className="
+        mx-4
+        mt-4
+        p-3
+        rounded-xl
+        bg-slate-900
+      ">
+        <p className="text-xs text-slate-400">
+          Logged in as
+        </p>
+
+        <p className="
+          capitalize
+          font-semibold
+        ">
+          {role}
+        </p>
       </div>
 
-      <div className="p-4 border-t border-slate-700">
+
+      {/* Menu */}
+
+      <nav className="
+        flex-1
+        p-4
+        space-y-2
+        overflow-y-auto
+      ">
+
+        {menus.map((menu) => {
+
+          const Icon = menu.icon;
+
+          const active =
+            location.pathname === menu.path;
+
+
+          return (
+            <Link
+              key={menu.path}
+              to={menu.path}
+              className={`
+                flex
+                items-center
+                gap-3
+                px-4
+                py-3
+                rounded-xl
+                transition-all
+
+                ${
+                  active
+                  ?
+                  "bg-blue-600 shadow-lg"
+                  :
+                  "text-slate-300 hover:bg-slate-800 hover:text-white"
+                }
+              `}
+            >
+
+              <Icon size={20}/>
+
+              <span>
+                {menu.name}
+              </span>
+
+            </Link>
+          );
+
+        })}
+
+      </nav>
+
+
+      {/* Logout */}
+
+      <div className="
+        p-4
+        border-t
+        border-slate-800
+      ">
+
         <button
           onClick={logout}
-          className="w-full bg-red-500 hover:bg-red-600 py-3 rounded-xl font-medium transition"
+          className="
+            w-full
+            flex
+            items-center
+            justify-center
+            gap-2
+            bg-red-500
+            hover:bg-red-600
+            py-3
+            rounded-xl
+            transition
+          "
         >
+
+          <LogOut size={20}/>
+
           Logout
+
         </button>
+
       </div>
-    </div>
+
+
+    </aside>
   );
 }

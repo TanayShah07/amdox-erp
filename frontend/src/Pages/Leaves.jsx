@@ -2,36 +2,21 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+
 export default function Leaves() {
   const navigate = useNavigate();
+  const [leaves, setLeaves] = useState([]);
+  const [employeeId, setEmployeeId] = useState("");
+  const [leaveType, setLeaveType] = useState("");
+  const [reason, setReason] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [search,setSearch]=useState("");
+  const [selectedDate,setSelectedDate]=useState("");
 
-  const [leaves, setLeaves] =
-    useState([]);
-
-  const [employeeId, setEmployeeId] =
-    useState("");
-
-  const [leaveType, setLeaveType] =
-    useState("");
-
-  const [reason, setReason] =
-    useState("");
-
-  const [fromDate, setFromDate] =
-    useState("");
-
-  const [toDate, setToDate] =
-    useState("");
-
-  
-  const [loading, setLoading] =
-    useState(false);
-
-  const token =
-    localStorage.getItem("token");
-
-  const role =
-    localStorage.getItem("role");
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
   // CHECK TOKEN
   useEffect(() => {
@@ -86,6 +71,8 @@ export default function Leaves() {
       setLoading(false);
     }
   };
+
+
 
   // APPLY LEAVE
   const applyLeave = async () => {
@@ -209,9 +196,13 @@ export default function Leaves() {
     }
   };
 
-  useEffect(() => {
+    useEffect(()=>{
     fetchLeaves();
-  }, []);
+    const interval=setInterval(()=>{
+    fetchLeaves();
+    },30000);
+    return ()=>clearInterval(interval);
+    },[]);
 
   const pageTitleStyle = {
   fontSize: "32px",
@@ -220,6 +211,20 @@ export default function Leaves() {
   marginBottom: "24px",
 };
 
+const filteredLeaves = leaves.filter((item) => {
+
+  const matchSearch =
+    item.employee_name
+      ?.toLowerCase()
+      .includes(search.toLowerCase());
+
+  const matchDate =
+    !selectedDate ||
+    item.from_date?.split("T")[0] === selectedDate;
+
+  return matchSearch && matchDate;
+
+});
   return (
     <div className="flex min-h-screen bg-gray-100 overflow-hidden">
      
@@ -227,9 +232,7 @@ export default function Leaves() {
       <div className="w-full">
         <div className="p-4 md:p-6 pt-20">
           {/* HEADER */}
-          <div className="flex items-center gap-4 mb-6">
-           
-
+          <div className="flex items-center gap-4 mb-6">     
             <div>
               <h1 style={pageTitleStyle}>
               Leaves
@@ -242,6 +245,34 @@ export default function Leaves() {
             </div>
           </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
+              <div className="bg-white rounded-2xl shadow p-5">
+                <p className="text-gray-500">Total Leaves</p>
+                <h2 className="text-3xl font-bold text-blue-600">
+                {leaves.length}
+                </h2>
+              </div>
+              <div className="bg-white rounded-2xl shadow p-5">
+                <p className="text-gray-500">Pending</p>
+                <h2 className="text-3xl font-bold text-yellow-600">
+                {leaves.filter(l=>l.status==="Pending").length}
+                </h2>
+              </div>
+              <div className="bg-white rounded-2xl shadow p-5">
+                <p className="text-gray-500">Approved</p>
+                <h2 className="text-3xl font-bold text-green-600">
+                {leaves.filter(l=>l.status==="Approved").length}
+                </h2>
+              </div>
+              <div className="bg-white rounded-2xl shadow p-5">
+                <p className="text-gray-500">Rejected</p>
+                <h2 className="text-3xl font-bold text-red-600">
+                {leaves.filter(l=>l.status==="Rejected").length}
+                </h2>
+              </div>
+
+            </div>
+
           {/* APPLY LEAVE FORM */}
           <div className="bg-white p-6 rounded-2xl shadow mb-6">
             <h2 className="text-xl font-semibold mb-5">
@@ -249,18 +280,17 @@ export default function Leaves() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
+              {role !== "employee" && (
+                <input
                 type="text"
                 placeholder="Employee ID"
                 value={employeeId}
-                onChange={(e) =>
-                  setEmployeeId(
-                    e.target.value.toUpperCase()
-                  )
+                onChange={(e)=>
+                setEmployeeId(e.target.value.toUpperCase())
                 }
                 className="border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-400"
-              />
-
+                />
+                )}
               <select
                 value={leaveType}
                 onChange={(e) =>
@@ -321,34 +351,56 @@ export default function Leaves() {
                 rows={4}
               />
 
-<button
-  onClick={applyLeave}
-  className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition md:col-span-2"
->
-  Apply Leave
-</button>
-</div>
-</div>
+                <button
+                  onClick={applyLeave}
+                  className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition md:col-span-2"
+                >
+                  Apply Leave
+                </button>
+                </div>
+                </div>
+                {role !== "employee" && (
+                <div className="flex gap-4 mb-5">
 
-<div className="flex gap-4 mb-5">
+                  <a href="http://localhost:5000/reports/leaves/pdf">
 
-  <a href="http://localhost:5000/reports/leaves/pdf">
+                    <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-lg">
+                      Export PDF
+                    </button>
 
-    <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-lg">
-      Export PDF
-    </button>
+                  </a>
+                  <a href="http://localhost:5000/reports/leaves/excel">
+                    <button className="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-lg">
+                      Export Excel
+                    </button>
+                  </a>
+                </div>
+                )}
 
-  </a>
+                {role !== "employee" && (
 
-  <a href="http://localhost:5000/reports/leaves/excel">
+              <div className="flex gap-3 mb-5">
 
-    <button className="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-lg">
-      Export Excel
-    </button>
+                <input
+                type="text"
+                placeholder="Search Employee..."
+                value={search}
+                onChange={(e)=>setSearch(e.target.value)}
+                className="border rounded-xl px-4 py-3 w-80"
+                />
 
-  </a>
+                <input
+                type="date"
+                value={selectedDate}
+                onChange={(e)=>setSelectedDate(e.target.value)}
+                className="border rounded-xl px-4 py-3"
+                />
 
-</div>
+              </div>
+
+              )}
+
+
           {/* TABLE */}
           <div className="bg-white rounded-2xl shadow overflow-hidden">
             <div className="p-5 border-b">
@@ -357,11 +409,11 @@ export default function Leaves() {
               </h2>
             </div>
                     
-{loading ? (
-  <div className="p-10 text-center text-gray-500">
-    Loading Leaves...
-  </div>
-) : leaves.length === 0 ? (
+              {loading ? (
+                <div className="p-10 text-center text-gray-500">
+                  Loading Leaves...
+                </div>
+              ) : leaves.length === 0 ? (
               <div className="p-10 text-center text-gray-500">
                 No Leave Records Found
               </div>
@@ -399,15 +451,15 @@ export default function Leaves() {
                       </th>
 
                      {(role === "admin" || role === "hr") && (
-  <th className="p-4 text-left">
-    Actions
-  </th>
-)}
+                      <th className="p-4 text-left">
+                        Actions
+                      </th>
+                    )}
                     </tr>
                   </thead>
 
                   <tbody>
-  {leaves.map((item) => (
+  {filteredLeaves.map((item) => (
     <tr
       key={item.id}
       className="border-t hover:bg-gray-50 transition"
@@ -450,7 +502,8 @@ export default function Leaves() {
         </span>
       </td>
 
-      {(role === "admin" || role === "hr") && (
+        {(role === "admin" || role === "hr") &&
+        item.status === "Pending" && (
         <td className="p-4">
           <div className="flex gap-2">
             <button

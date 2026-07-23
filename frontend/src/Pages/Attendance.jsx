@@ -6,9 +6,11 @@ export default function Attendance() {
   const navigate = useNavigate();
 
   const [attendance, setAttendance] = useState([]);
-  const [employeeId, setEmployeeId] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [employeeId, setEmployeeId] = useState("");
+  const [search, setSearch] = useState("");
+  const [selectedDate,setSelectedDate]=useState("");
+  const role = localStorage.getItem("role");
   const token = localStorage.getItem("token");
 
   // CHECK TOKEN
@@ -61,7 +63,7 @@ export default function Attendance() {
       setLoading(false);
     }
   };
-
+  
   // CLOCK IN
 const clockIn = async () => {
   try {
@@ -118,9 +120,13 @@ const clockOut = async () => {
   }
 };
 
-  useEffect(() => {
-    fetchAttendance();
-  }, []);
+  useEffect(()=>{
+  fetchAttendance();
+  const interval=setInterval(()=>{
+  fetchAttendance();
+  },30000);
+  return ()=>clearInterval(interval);
+  },[]);
 
   const pageTitleStyle = {
   fontSize: "32px",
@@ -152,6 +158,37 @@ const clockOut = async () => {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
+          <div className="bg-white rounded-2xl shadow p-5">
+            <p className="text-gray-500">Total Records</p>
+            <h2 className="text-3xl font-bold text-blue-600">
+              {attendance.length}
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow p-5">
+            <p className="text-gray-500">Present</p>
+            <h2 className="text-3xl font-bold text-green-600">
+              {attendance.filter(a => a.status === "Present").length}
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow p-5">
+            <p className="text-gray-500">Clocked In</p>
+            <h2 className="text-3xl font-bold text-indigo-600">
+              {attendance.filter(a => a.clock_in).length}
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow p-5">
+            <p className="text-gray-500">Clocked Out</p>
+            <h2 className="text-3xl font-bold text-red-600">
+              {attendance.filter(a => a.clock_out).length}
+            </h2>
+          </div>
+
+        </div>
+
           {/* CLOCK BOX */}
           <div className="bg-white p-6 rounded-2xl shadow mb-6">
             <h2 className="text-xl font-semibold mb-4">
@@ -159,17 +196,17 @@ const clockOut = async () => {
             </h2>
 
             <div className="flex flex-col lg:flex-row gap-4">
-              <input
-                type="text"
-                placeholder="Enter Employee ID"
-                value={employeeId}
-                onChange={(e) =>
-                  setEmployeeId(
-                    e.target.value.toUpperCase()
-                  )
-                }
-                className="border border-gray-300 p-3 rounded-lg flex-1 outline-none focus:ring-2 focus:ring-blue-400"
-              />
+              {role !== "employee" && (
+                <input
+                  type="text"
+                  placeholder="Employee ID"
+                  value={employeeId}
+                  onChange={(e) =>
+                  setEmployeeId(e.target.value.toUpperCase())
+                 }
+                 className="border border-gray-300 p-3 rounded-lg flex-1 outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              )}
 
               <button
                 onClick={clockIn}
@@ -186,25 +223,39 @@ const clockOut = async () => {
               </button>
             </div>
           </div>
-<div className="flex gap-4 mb-5">
 
-  <a href="http://localhost:5000/reports/attendance/pdf">
+          {role !== "employee" && (
+          <div className="flex gap-4 mb-5">
+            <a href="http://localhost:5000/reports/attendance/pdf">
+              <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-lg">
+                Export PDF
+              </button>
+            </a>
 
-    <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-lg">
-      Export PDF
-    </button>
+            <a href="http://localhost:5000/reports/attendance/excel">
+              <button className="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-lg">
+                Export Excel
+              </button>
+            </a>
+          </div>
+          )}
 
-  </a>
+          <input
+            type="text"
+            placeholder="Search Employee..."
+            value={search}
+            onChange={(e)=>setSearch(e.target.value)}
+            className="border p-3 rounded-lg mb-4 w-80"
+          />
 
-  <a href="http://localhost:5000/reports/attendance/excel">
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e)=>setSelectedDate(e.target.value)}
+            className="border rounded-xl px-4 py-2"
+         />
 
-    <button className="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-lg">
-      Export Excel
-    </button>
-
-  </a>
-
-</div>
+        
           {/* TABLE */}
           <div className="bg-white rounded-2xl shadow overflow-hidden">
             <div className="p-5 border-b">
@@ -248,17 +299,43 @@ const clockOut = async () => {
                       </th>
 
                       <th className="p-4 text-left">
+                        Working Hours
+                      </th>
+
+                      <th className="p-4 text-left">
                         Status
                       </th>
                     </tr>
                   </thead>
 
                   <tbody>
-                    {attendance.map(
-                      (item) => (
+                    {attendance
+                    .filter((item)=>{
+
+                      const matchSearch =
+                        item.employee_name
+                        ?.toLowerCase()
+                        .includes(
+                          search.toLowerCase()
+                        );
+
+                      const matchDate =
+                        !selectedDate ||
+                        item.date
+                        ?.split("T")[0] === selectedDate;
+                      return matchSearch && matchDate;
+                    })
+                    .map(
+                    (item)=>(
                         <tr
                           key={item.id}
-                          className="border-t hover:bg-gray-50 transition"
+                          className={`border-t transition hover:bg-gray-50 ${
+                            item.date &&
+                            new Date(item.date).toDateString() ===
+                              new Date().toDateString()
+                              ? "bg-blue-50"
+                              : ""
+                          }`}
                         >
                           <td className="p-4 font-semibold text-blue-700">
                             {item.employee_id ||
@@ -294,33 +371,38 @@ const clockOut = async () => {
                               : "-"}
                           </td>
 
-                          <td className="p-4 text-red-600 font-medium">
-                            {item.clock_out
-                              ? new Date(
-                                  item.clock_out
-                                ).toLocaleTimeString(
-                                  [],
-                                  {
-                                    hour:
-                                      "2-digit",
-                                    minute:
-                                      "2-digit",
-                                  }
-                                )
-                              : "-"}
+                          <td className="p-4">
+                          {item.clock_in && item.clock_out
+                          ? `${(
+                            (new Date(item.clock_out) -
+                            new Date(item.clock_in))
+                            /(1000*60*60)
+                          ).toFixed(2)} hrs`
+                          : "-"}
                           </td>
 
+
                           <td className="p-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                item.status ===
-                                "Present"
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-yellow-100 text-yellow-700"
-                              }`}
-                            >
-                              {item.status}
-                            </span>
+                          <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          item.status==="Present"
+                          ?"bg-green-100 text-green-700"
+                          :item.status==="Absent"
+                          ?"bg-red-100 text-red-700"
+                          :"bg-yellow-100 text-yellow-700"
+                          }`}
+                          >
+                          {item.status}
+                          </span>
+                          </td>
+                          <td className="p-4">
+                            {item.clock_in && item.clock_out
+                              ? `${(
+                                  (new Date(item.clock_out) -
+                                    new Date(item.clock_in)) /
+                                  (1000 * 60 * 60)
+                                ).toFixed(2)} hrs`
+                              : "-"}
                           </td>
                         </tr>
                       )

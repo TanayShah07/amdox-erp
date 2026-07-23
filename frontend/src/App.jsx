@@ -13,7 +13,7 @@ import MyProjects from "./pages/MyProjects";
 import Ledger from "./pages/Ledger";
 import Inventory from "./pages/Inventory";
 import Invoices from "./pages/Invoices";
-
+import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import ChatBot from "./components/ChatBot";
 
@@ -37,15 +37,22 @@ const MainLayout = ({ children }) => {
   return (
     <div className="flex">
       <Sidebar />
-
-      <div className="ml-72 w-full min-h-screen bg-gray-100 p-5">
+      <main
+        className="
+        ml-72
+        w-full
+        min-h-screen
+        bg-gray-100
+        p-6
+        "
+      >
+        <Navbar />
         {children}
         <ChatBot />
-      </div>
+      </main>
     </div>
   );
 };
-
 function App() {
   return (
     <BrowserRouter>

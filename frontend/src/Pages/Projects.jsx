@@ -1,830 +1,1005 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+
+import {
+  Search,
+  FolderKanban,
+  CircleDollarSign,
+  CheckCircle,
+  Clock,
+  Plus,
+  Edit,
+  Trash2,
+  UserPlus,
+  Check,
+  X
+} from "lucide-react";
+
 const Projects = () => {
-  
-  const [name, setName] =
-    useState("");
+const [name,setName] = useState("");
+const [status,setStatus] = useState("");
+const [budget,setBudget] = useState("");
+const [projects,setProjects] = useState([]);
+const [editId,setEditId] = useState(null);
+const [employees,setEmployees] = useState([]);
+const [selectedEmployees,setSelectedEmployees] = useState({});
+const [search,setSearch] = useState("");
+const [filterStatus,setFilterStatus] = useState("All");
+const [showForm,setShowForm] = useState(true);
 
-  const [status, setStatus] =
-    useState("");
+const token = localStorage.getItem("token");
+const role = localStorage.getItem("role");
 
-  const [budget, setBudget] =
-    useState("");
+// FETCH PROJECTS
 
-  const [projects, setProjects] =
-    useState([]);
+const fetchProjects = async()=>{ try{
+const res = await fetch("http://localhost:5000/projects",
+{
+headers:{Authorization:`Bearer ${token}`}
+}
+);
+const data = await res.json();
+setProjects(
+Array.isArray(data)
+? data
+:[]
+);
+}
+catch(err){ console.log(err);
+toast.error("Failed to fetch projects");
+}
+};
 
-  const [editId, setEditId] =
-    useState(null);
+// FETCH EMPLOYEES
 
-  const [employees, setEmployees] =
-    useState([]);
+const fetchEmployees = async()=>{
+try{
+const res = await fetch(
+"http://localhost:5000/projects/project-employees",
+{
+headers:{
+Authorization:`Bearer ${token}`
+}
+}
+);
 
-  const [selectedEmployees,
-    setSelectedEmployees] =
-    useState({});
+const data = await res.json();
+setEmployees(
+Array.isArray(data)
+? data
+:[]
+);
+}
+catch(err){console.log(err);}
+};
 
-  const token =
-    localStorage.getItem("token");
+useEffect(()=>{fetchProjects();
+if(role==="admin" || role==="hr"
+){
+fetchEmployees();
+}
+},[]);
 
-  const role =
-    localStorage.getItem("role");
 
-  const fetchProjects = async () => {
-    try {
+// FILTER DATA
 
-      let url =
-        "http://localhost:5000/projects";
 
-      if (role === "employee") {
-        url = "http://localhost:5000/projects";
-      }
+const filteredProjects = projects.filter((project)=>{
+const searchMatch = project.name ?.toLowerCase() .includes(
+search.toLowerCase()
+);
+const statusMatch = filterStatus==="All" || project.status===filterStatus;
 
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+return (
+searchMatch &&
+statusMatch
+);
+});
+const totalProjects = projects.length;
+const completedProjects = projects.filter(
+  p=>p.status==="Completed").length;
 
-      const data =
-        await res.json();
+const pendingProjects = projects.filter(
+  p=>p.status==="Pending").length;
 
-      setProjects(
-        Array.isArray(data)
-          ? data
-          : []
-      );
+const activeProjects = projects.filter(
+  p=>p.status==="In Progress").length;
 
-    } catch (err) {
+// =========================
+// ADD / UPDATE PROJECT
+// =========================
 
-      console.log(err);
+const addOrUpdate = async () => {
 
-      toast.error(
-        "Failed to fetch projects"
-      );
+  if (!name || !status || !budget) {
+    toast.error("Please fill all fields");
+    return;
+  }
 
-    }
-  };
+  try {
 
-  const fetchEmployees =
-    async () => {
-
-      try {
-
-        const res = await fetch(
-          "http://localhost:5000/projects/project-employees",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data =
-          await res.json();
-
-        setEmployees(
-          Array.isArray(data)
-            ? data
-            : []
-        );
-
-      } catch (err) {
-
-        console.log(err);
-
-      }
+    const body = {
+      name,
+      status,
+      budget: Number(budget),
     };
 
-  useEffect(() => {
+    if (editId) {
+
+      await fetch(
+        `http://localhost:5000/projects/${editId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        }
+      );
+
+      toast.success("Project Updated");
+
+    } else {
+
+      await fetch(
+        "http://localhost:5000/projects",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        }
+      );
+
+      toast.success("Project Added");
+    }
+
+    setName("");
+    setStatus("");
+    setBudget("");
+    setEditId(null);
 
     fetchProjects();
 
-    if (
-      role === "admin" ||
-      role === "hr"
-    ) {
-      fetchEmployees();
-    }
+  } catch (err) {
 
-  }, []);
+    console.log(err);
 
-  const addOrUpdate = async () => {
-
-    if (
-      !name ||
-      !status ||
-      !budget
-    ) {
-      toast.error(
-        "Please fill all fields"
-      );
-      return;
-    }
-
-    try {
-
-      const body = {
-        name,
-        status,
-        budget:
-          Number(budget),
-      };
-
-      if (editId) {
-
-        await fetch(
-          `http://localhost:5000/projects/${editId}`,
-          {
-            method: "PUT",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-
-              Authorization:
-                `Bearer ${token}`,
-            },
-
-            body:
-              JSON.stringify(body),
-          }
-        );
-
-        toast.success(
-          "Project Updated"
-        );
-
-      } else {
-
-        await fetch(
-          "http://localhost:5000/projects",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-
-              Authorization:
-                `Bearer ${token}`,
-            },
-
-            body:
-              JSON.stringify(body),
-          }
-        );
-
-        toast.success(
-          "Project Added"
-        );
-      }
-
-      setName("");
-      setStatus("");
-      setBudget("");
-      setEditId(null);
-
-      fetchProjects();
-
-    } catch (err) {
-
-      console.log(err);
-
-      toast.error(
-        "Operation failed"
-      );
-
-    }
-  };
-
-  const assignProject =
-    async (projectId) => {
-
-      if (
-        !selectedEmployees[
-          projectId
-        ]
-      ) {
-        toast.error(
-          "Select employee"
-        );
-        return;
-      }
-
-      try {
-
-        await fetch(
-          "http://localhost:5000/projects/assign-project",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-
-              Authorization:
-                `Bearer ${token}`,
-            },
-
-            body: JSON.stringify({
-              employee_code:
-                selectedEmployees[
-                  projectId
-                ],
-
-              project_id:
-                projectId,
-            }),
-          }
-        );
-
-        toast.success(
-          "Project Assigned"
-        );
-
-        setSelectedEmployees({
-          ...selectedEmployees,
-          [projectId]: "",
-        });
-
-        fetchProjects();
-
-      } catch (err) {
-
-        console.log(err);
-
-        toast.error(
-          "Assignment failed"
-        );
-
-      }
-    };
-
-  const sendForApproval =
-    async (id) => {
-
-      try {
-
-        await fetch(
-          `http://localhost:5000/projects/${id}/send-approval`,
-          {
-            method: "PUT",
-
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
-
-        toast.success(
-          "Sent For Approval"
-        );
-
-        fetchProjects();
-
-      } catch (err) {
-
-        console.log(err);
-
-        toast.error(
-          "Operation failed"
-        );
-
-      }
-    };
-
-  const approveProject =
-    async (id) => {
-
-      try {
-
-        await fetch(
-          `http://localhost:5000/projects/${id}/approve`,
-          {
-            method: "PUT",
-
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
-
-        toast.success(
-          "Project Approved"
-        );
-
-        fetchProjects();
-
-      } catch (err) {
-
-        console.log(err);
-
-        toast.error(
-          "Approval failed"
-        );
-
-      }
-    };
-
-  const rejectProject =
-    async (id) => {
-
-      try {
-
-        await fetch(
-          `http://localhost:5000/projects/${id}/reject`,
-          {
-            method: "PUT",
-
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
-
-        toast.success(
-          "Project Rejected"
-        );
-
-        fetchProjects();
-
-      } catch (err) {
-
-        console.log(err);
-
-        toast.error(
-          "Reject failed"
-        );
-
-      }
-    };
-
-  const deleteProject =
-    async (id) => {
-
-      try {
-
-        await fetch(
-          `http://localhost:5000/projects/${id}`,
-          {
-            method: "DELETE",
-
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
-
-        toast.success(
-          "Project Deleted"
-        );
-
-        fetchProjects();
-
-      } catch (err) {
-
-        console.log(err);
-
-        toast.error(
-          "Delete failed"
-        );
-
-      }
-    };
-
-  const editProject =
-    (project) => {
-
-      setName(project.name);
-      setStatus(project.status);
-      setBudget(project.budget);
-      setEditId(project.id);
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    };
-
-  const getStatusColor =
-    (status) => {
-
-      if (
-        status === "Completed"
-      ) {
-        return "bg-green-100 text-green-700";
-      }
-
-      if (
-        status === "Pending"
-      ) {
-        return "bg-yellow-100 text-yellow-700";
-      }
-
-      return "bg-blue-100 text-blue-700";
-    };
-
-  const pageTitleStyle = {
-  fontSize: "32px",
-  fontWeight: "700",
-  color: "#111827",
-  marginBottom: "24px",
+    toast.error("Operation Failed");
+  }
 };
 
-  return (
-  <div className="flex min-h-screen bg-gray-100">
-    
 
-    <div className="flex-1">
-      <div className="w-full">
-        <div className="p-6 pt-20">
+// =========================
+// ASSIGN PROJECT
+// =========================
 
-          <div className="flex items-center gap-4 mb-6">
+const assignProject = async (projectId) => {
 
-          
-            
+  if (!selectedEmployees[projectId]) {
 
-            <div>
+    toast.error("Select Employee");
 
-              <h1 style={pageTitleStyle}>
-                Projects
-              </h1>
+    return;
+  }
 
-              <p className="text-gray-500">
-                Manage company projects easily
-              </p>
+  try {
 
-            </div>
+    await fetch(
+      "http://localhost:5000/projects/assign-project",
+      {
+        method: "POST",
 
-          </div>
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
 
-          {(role === "admin" ||
-            role === "hr") && (
+        body: JSON.stringify({
 
-            <div className="bg-white p-6 rounded-2xl shadow mb-6">
+          employee_code:
+            selectedEmployees[projectId],
 
-              <h2 className="text-xl font-semibold mb-4">
+          project_id: projectId,
 
-                {editId
-                  ? "Update Project"
-                  : "Add New Project"}
+        }),
 
-              </h2>
+      }
+    );
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    toast.success("Project Assigned");
 
-                <input
-                  type="text"
-                  placeholder="Project Name"
-                  value={name}
-                  onChange={(e) =>
-                    setName(
-                      e.target.value
-                    )
-                  }
-                  className="p-3 border rounded-lg"
-                />
+    setSelectedEmployees({
+      ...selectedEmployees,
+      [projectId]: "",
+    });
 
-                <select
-                  value={status}
-                  onChange={(e) =>
-                    setStatus(
-                      e.target.value
-                    )
-                  }
-                  className="p-3 border rounded-lg"
-                >
+    fetchProjects();
 
-                  <option value="">
-                    Select Status
-                  </option>
+  } catch (err) {
 
-                  <option value="Pending">
-                    Pending
-                  </option>
+    console.log(err);
 
-                  <option value="In Progress">
-                    In Progress
-                  </option>
+    toast.error("Assignment Failed");
 
-                  <option value="Completed">
-                    Completed
-                  </option>
+  }
 
-                </select>
+};
 
-                <input
-                  type="number"
-                  placeholder="Budget"
-                  value={budget}
-                  onChange={(e) =>
-                    setBudget(
-                      e.target.value
-                    )
-                  }
-                  className="p-3 border rounded-lg"
-                />
 
-              </div>
+// =========================
+// SEND FOR APPROVAL
+// =========================
 
-              <div className="flex gap-3 mt-4">
+const sendForApproval = async (id) => {
 
-                <button
-                  onClick={addOrUpdate}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg"
-                >
+  try {
 
-                  {editId
-                    ? "Update Project"
-                    : "Add Project"}
+    await fetch(
+      `http://localhost:5000/projects/${id}/send-approval`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
-                </button>
+    toast.success("Sent For Approval");
 
-              </div>
+    fetchProjects();
 
-            </div>
-          )}
+  } catch (err) {
 
-          <div className="bg-white rounded-2xl shadow overflow-hidden">
+    toast.error("Operation Failed");
 
-            <div className="p-5 border-b">
+  }
 
-              <h2 className="text-xl font-semibold">
-                Projects List
-              </h2>
+};
 
-            </div>
 
-            {projects.length === 0 ? (
+// =========================
+// APPROVE PROJECT
+// =========================
 
-              <div className="p-10 text-center text-gray-500">
-                No Projects Added
-              </div>
+const approveProject = async (id) => {
 
-            ) : (
+  try {
 
-              <table className="w-full text-left">
+    await fetch(
+      `http://localhost:5000/projects/${id}/approve`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
-                <thead className="bg-gray-100">
+    toast.success("Project Approved");
 
-                  <tr>
+    fetchProjects();
 
-                    <th className="p-4">
-                      Project
-                    </th>
+  } catch (err) {
 
-                    <th className="p-4">
-                      Status
-                    </th>
+    toast.error("Approval Failed");
 
-                    <th className="p-4">
-                      Budget
-                    </th>
+  }
 
-                    <th className="p-4">
-                      Assigned To
-                    </th>
+};
 
-                    <th className="p-4">
-                      Approval Status
-                    </th>
 
-                    {(role === "admin" ||
-                      role === "hr") && (
-                      <th className="p-4">
-                        Assign Employee
-                      </th>
-                    )}
+// =========================
+// REJECT PROJECT
+// =========================
 
-                    <th className="p-4">
-                      Actions
-                    </th>
+const rejectProject = async (id) => {
 
-                  </tr>
+  try {
 
-                </thead>
+    await fetch(
+      `http://localhost:5000/projects/${id}/reject`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
-                <tbody>
+    toast.success("Project Rejected");
 
-                  {projects.map(
-                    (project) => (
+    fetchProjects();
 
-                    <tr
-                      key={project.id}
-                      className="border-t hover:bg-gray-50"
-                    >
+  } catch (err) {
 
-                      <td className="p-4 font-medium">
-                        {project.name}
-                      </td>
+    toast.error("Reject Failed");
 
-                      <td className="p-4">
+  }
 
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                            project.status
-                          )}`}
-                        >
-                          {project.status}
-                        </span>
+};
+// =========================
+// DELETE PROJECT
+// =========================
 
-                      </td>
+const deleteProject = async (id) => {
 
-                      <td className="p-4 font-semibold">
-                        ₹ {project.budget}
-                      </td>
+  try {
 
-                      <td className="p-4">
-                        {project.assigned_employee ||
-                          "Not Assigned"}
-                      </td>
+    await fetch(
+      `http://localhost:5000/projects/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
-                      <td className="p-4">
+    toast.success("Project Deleted");
 
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            project.approval_status ===
-                            "Approved"
-                              ? "bg-green-100 text-green-700"
-                              : project.approval_status ===
-                                "Rejected"
-                              ? "bg-red-100 text-red-700"
-                              : project.approval_status ===
-                                "Pending Approval"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {project.approval_status ||
-                            "In Progress"}
-                        </span>
+    fetchProjects();
 
-                      </td>
-
-                      {(role === "admin" ||
-                        role === "hr") && (
-
-                        <td className="p-4">
-
-                          <div className="flex gap-2">
-
-                            <select
-                              value={
-                                selectedEmployees[
-                                  project.id
-                                ] || ""
-                              }
-
-                              onChange={(e) =>
-                                setSelectedEmployees({
-                                  ...selectedEmployees,
-
-                                  [project.id]:
-                                    e.target.value,
-                                })
-                              }
-
-                              className="border p-2 rounded"
-                            >
-
-                              <option value="">
-                                Select
-                              </option>
-
-                              {employees.map(
-                                (emp) => (
-
-                                <option
-                                  key={
-                                    emp.employee_code
-                                  }
-
-                                  value={
-                                    emp.employee_code
-                                  }
-                                >
-                                  {emp.name}
-                                </option>
-
-                              ))}
-
-                            </select>
-
-                            <button
-                              onClick={() =>
-                                assignProject(
-                                  project.id
-                                )
-                              }
-                              className="bg-green-600 text-white px-3 py-1 rounded"
-                            >
-                              Assign
-                            </button>
-
-                          </div>
-
-                        </td>
-                      )}
-
-                      <td className="p-4">
-
-                        {(role === "admin" ||
-                          role === "hr") && (
-                          <>
-
-                            <button
-                              onClick={() =>
-                                editProject(
-                                  project
-                                )
-                              }
-                              className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mr-3"
-                            >
-                              Edit
-                            </button>
-
-                            <button
-                              onClick={() =>
-                                deleteProject(
-                                  project.id
-                                )
-                              }
-                              className="bg-red-100 text-red-700 px-3 py-1 rounded-lg mr-3"
-                            >
-                              Delete
-                            </button>
-
-                            {project.approval_status ===
-                              "Pending Approval" && (
-                              <>
-
-                                <button
-                                  onClick={() =>
-                                    approveProject(
-                                      project.id
-                                    )
-                                  }
-                                  className="bg-green-600 text-white px-3 py-1 rounded-lg mr-3"
-                                >
-                                  Approve
-                                </button>
-
-                                <button
-                                  onClick={() =>
-                                    rejectProject(
-                                      project.id
-                                    )
-                                  }
-                                  className="bg-yellow-600 text-white px-3 py-1 rounded-lg"
-                                >
-                                  Reject
-                                </button>
-
-                              </>
-                            )}
-
-                          </>
-                        )}
-
-                        {role === "employee" && (
-                          <button
-                            onClick={() =>
-                              sendForApproval(
-                                project.id
-                              )
-                            }
-                            className="bg-purple-600 text-white px-3 py-1 rounded-lg"
-                          >
-                            Send For Approval
-                          </button>
-                        )}
-
-                      </td>
-
-                    </tr>
-
-                  ))}
-
-                </tbody>
-
-              </table>
-
-            )}
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  );
+  } catch (err) {
+
+    console.log(err);
+
+    toast.error("Delete Failed");
+
+  }
+
+};
+
+
+// =========================
+// EDIT PROJECT
+// =========================
+
+const editProject = (project) => {
+
+  setName(project.name);
+  setStatus(project.status);
+  setBudget(project.budget);
+  setEditId(project.id);
+
+  setShowForm(true);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+
+};
+
+
+// =========================
+// STATUS COLORS
+// =========================
+
+const getStatusColor = (status) => {
+
+  switch (status) {
+
+    case "Completed":
+      return "bg-green-100 text-green-700";
+
+    case "Pending":
+      return "bg-yellow-100 text-yellow-700";
+
+    case "In Progress":
+      return "bg-blue-100 text-blue-700";
+
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+
+};
+
+
+
+// =========================
+// RETURN
+// =========================
+
+return (
+
+<div className="min-h-screen bg-gray-100 p-6">
+
+{/* HEADER */}
+
+<div className="flex justify-between items-center mb-8">
+
+<div>
+
+<h1 className="text-3xl font-bold text-gray-800">
+
+Project Management
+
+</h1>
+
+<p className="text-gray-500 mt-1">
+
+Manage, assign and monitor company projects
+
+</p>
+
+</div>
+
+{(role === "admin" || role === "hr") && (
+
+<button
+
+onClick={() => setShowForm(!showForm)}
+
+className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl"
+
+>
+
+<Plus size={18}/>
+
+New Project
+
+</button>
+
+)}
+
+</div>
+
+
+
+{/* SEARCH */}
+
+<div className="bg-white rounded-2xl shadow p-5 mb-6">
+
+<div className="grid md:grid-cols-2 gap-4">
+
+<div className="relative">
+
+<Search
+size={18}
+className="absolute left-3 top-3.5 text-gray-400"
+/>
+
+<input
+
+type="text"
+
+placeholder="Search Projects..."
+
+value={search}
+
+onChange={(e)=>setSearch(e.target.value)}
+
+className="w-full pl-10 pr-4 py-3 border rounded-xl"
+
+ />
+
+</div>
+
+<select
+
+value={filterStatus}
+
+onChange={(e)=>setFilterStatus(e.target.value)}
+
+className="border rounded-xl px-4 py-3"
+
+>
+
+<option>All</option>
+
+<option>Pending</option>
+
+<option>In Progress</option>
+
+<option>Completed</option>
+
+</select>
+
+</div>
+
+</div>
+
+
+
+{/* DASHBOARD CARDS */}
+
+<div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+
+<div className="bg-white rounded-2xl shadow p-6">
+
+<div className="flex justify-between">
+
+<div>
+
+<p className="text-gray-500">
+
+Total Projects
+
+</p>
+
+<h2 className="text-3xl font-bold mt-2">
+
+{totalProjects}
+
+</h2>
+
+</div>
+
+<div className="bg-blue-100 p-3 rounded-xl">
+
+<FolderKanban
+size={26}
+className="text-blue-600"
+/>
+
+</div>
+
+</div>
+
+</div>
+
+<div className="bg-white rounded-2xl shadow p-6">
+
+<div className="flex justify-between">
+
+<div>
+
+<p className="text-gray-500">
+
+Completed
+
+</p>
+
+<h2 className="text-3xl font-bold mt-2 text-green-600">
+
+{completedProjects}
+
+</h2>
+
+</div>
+
+<div className="bg-green-100 p-3 rounded-xl">
+
+<CheckCircle
+size={26}
+className="text-green-600"
+/>
+
+</div>
+
+</div>
+
+</div>
+
+<div className="bg-white rounded-2xl shadow p-6">
+
+<div className="flex justify-between">
+
+<div>
+
+<p className="text-gray-500">
+
+In Progress
+
+</p>
+
+<h2 className="text-3xl font-bold mt-2 text-blue-600">
+
+{activeProjects}
+
+</h2>
+
+</div>
+
+<div className="bg-blue-100 p-3 rounded-xl">
+
+<Clock
+size={26}
+className="text-blue-600"
+/>
+
+</div>
+
+</div>
+
+</div>
+
+<div className="bg-white rounded-2xl shadow p-6">
+
+<div className="flex justify-between">
+
+<div>
+
+<p className="text-gray-500">
+
+Total Budget
+
+</p>
+
+<h2 className="text-3xl font-bold mt-2 text-purple-600">
+
+₹ {projects.reduce((sum,p)=>sum+Number(p.budget),0).toLocaleString()}
+
+</h2>
+
+</div>
+
+<div className="bg-purple-100 p-3 rounded-xl">
+
+<CircleDollarSign
+size={26}
+className="text-purple-600"
+/>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+{/* ADD / UPDATE PROJECT */}
+
+{(role === "admin" || role === "hr") && showForm && (
+
+<div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+
+<div className="flex justify-between items-center mb-6">
+
+<h2 className="text-2xl font-bold">
+
+{editId ? "Update Project" : "Create New Project"}
+
+</h2>
+
+</div>
+
+<div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+<input
+type="text"
+placeholder="Project Name"
+value={name}
+onChange={(e)=>setName(e.target.value)}
+className="border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
+/>
+
+<select
+value={status}
+onChange={(e)=>setStatus(e.target.value)}
+className="border rounded-xl px-4 py-3"
+>
+
+<option value="">Select Status</option>
+<option value="Pending">Pending</option>
+<option value="In Progress">In Progress</option>
+<option value="Completed">Completed</option>
+
+</select>
+
+<input
+type="number"
+placeholder="Budget"
+value={budget}
+onChange={(e)=>setBudget(e.target.value)}
+className="border rounded-xl px-4 py-3"
+/>
+
+</div>
+
+<div className="mt-6 flex gap-4">
+
+<button
+onClick={addOrUpdate}
+className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl"
+>
+
+{editId ? "Update Project" : "Add Project"}
+
+</button>
+
+{editId && (
+
+<button
+onClick={()=>{
+setEditId(null);
+setName("");
+setStatus("");
+setBudget("");
+}}
+className="bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl"
+>
+
+Cancel
+
+</button>
+
+)}
+
+</div>
+
+</div>
+
+)}
+
+{/* PROJECT TABLE */}
+
+<div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+
+<div className="p-6 border-b">
+
+<h2 className="text-2xl font-bold">
+
+Projects List
+
+</h2>
+
+</div>
+
+<div className="overflow-x-auto">
+
+<table className="min-w-full">
+
+<thead className="bg-gray-50">
+
+<tr>
+
+<th className="px-6 py-4 text-left">Project</th>
+
+<th className="px-6 py-4 text-left">Status</th>
+
+<th className="px-6 py-4 text-left">Budget</th>
+
+<th className="px-6 py-4 text-left">Assigned To</th>
+
+<th className="px-6 py-4 text-left">Approval</th>
+
+{(role==="admin" || role==="hr") && (
+
+<th className="px-6 py-4 text-left">
+
+Assign Employee
+
+</th>
+
+)}
+
+<th className="px-6 py-4 text-center">
+
+Actions
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{filteredProjects.length===0 ? (
+
+<tr>
+
+<td
+colSpan="7"
+className="text-center py-12 text-gray-500"
+>
+
+No Projects Found
+
+</td>
+
+</tr>
+
+) : (
+
+filteredProjects.map((project)=>(
+
+<tr
+key={project.id}
+className="border-t hover:bg-gray-50 transition"
+>
+
+<td className="px-6 py-5 font-semibold">
+
+{project.name}
+
+</td>
+
+<td className="px-6 py-5">
+
+<span
+className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}
+>
+
+{project.status}
+
+</span>
+
+</td>
+
+<td className="px-6 py-5 font-semibold">
+
+₹ {Number(project.budget).toLocaleString()}
+
+</td>
+
+<td className="px-6 py-5">
+
+{project.assigned_employee || "Not Assigned"}
+
+</td>
+
+<td className="px-6 py-5">
+
+<span
+className={`px-3 py-1 rounded-full text-sm font-medium
+
+${project.approval_status==="Approved"
+?"bg-green-100 text-green-700"
+
+:project.approval_status==="Rejected"
+
+?"bg-red-100 text-red-700"
+
+:project.approval_status==="Pending Approval"
+
+?"bg-yellow-100 text-yellow-700"
+
+:"bg-blue-100 text-blue-700"
+
+}`}
+
+>
+
+{project.approval_status || "In Progress"}
+
+</span>
+
+</td>
+
+{(role === "admin" || role === "hr") && (
+
+<td className="px-6 py-5">
+
+<div className="flex gap-2">
+
+<select
+value={selectedEmployees[project.id] || ""}
+onChange={(e)=>
+setSelectedEmployees({
+...selectedEmployees,
+[project.id]:e.target.value
+})
+}
+className="border rounded-lg px-3 py-2"
+>
+
+<option value="">
+Select
+</option>
+
+{employees.map((emp)=>(
+<option
+key={emp.employee_code}
+value={emp.employee_code}
+>
+{emp.name}
+</option>
+))}
+
+</select>
+
+<button
+onClick={()=>assignProject(project.id)}
+className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg"
+>
+
+<UserPlus size={18}/>
+
+</button>
+
+</div>
+
+</td>
+
+)}
+
+<td className="px-6 py-5">
+
+<div className="flex flex-wrap gap-2 justify-center">
+
+{(role==="admin" || role==="hr") && (
+
+<>
+
+<button
+onClick={()=>editProject(project)}
+className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg"
+>
+
+<Edit size={18}/>
+
+</button>
+
+<button
+onClick={()=>deleteProject(project.id)}
+className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg"
+>
+
+<Trash2 size={18}/>
+
+</button>
+
+{project.approval_status==="Pending Approval" && (
+
+<>
+
+<button
+onClick={()=>approveProject(project.id)}
+className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg"
+>
+
+<Check size={18}/>
+
+</button>
+
+<button
+onClick={()=>rejectProject(project.id)}
+className="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded-lg"
+>
+
+<X size={18}/>
+
+</button>
+
+</>
+
+)}
+
+</>
+
+)}
+
+{role==="employee" && (
+
+<button
+onClick={()=>sendForApproval(project.id)}
+className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+>
+
+Send For Approval
+
+</button>
+
+)}
+
+</div>
+
+</td>
+
+</tr>
+
+))
+
+)}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+);
+
 };
 
 export default Projects;
