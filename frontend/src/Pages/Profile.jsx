@@ -1,21 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function Profile() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-
-  const [darkMode, setDarkMode] = useState(false);
-
+  const [darkMode,setDarkMode]=useState( localStorage.getItem("darkMode")==="true");
   const [emailNotify, setEmailNotify] = useState(true);
   const [salaryNotify, setSalaryNotify] = useState(true);
   const [leaveNotify, setLeaveNotify] = useState(true);
-
   const [stats, setStats] = useState({
     attendance: 0,
     leaves: 0,
@@ -23,9 +20,13 @@ export default function Profile() {
     salary: 0,
   });
 
-  useEffect(() => {
+    useEffect(()=>{
     fetchProfile();
-  }, []);
+    const interval=setInterval(()=>{
+    fetchProfile();
+    },30000);
+    return ()=>clearInterval(interval);
+    },[]);
 
   const fetchProfile = async () => {
     const token = localStorage.getItem("token");
@@ -54,12 +55,24 @@ export default function Profile() {
       }
 
       setUser(data.user);
+      
+
+      const statsRes = await fetch(
+        "http://localhost:5000/api/profile-stats",
+        {
+          headers:{
+            Authorization:`Bearer ${token}`,
+          },
+        }
+      );
+
+      const statsData = await statsRes.json();
 
       setStats({
-        attendance: 0,
-        leaves: 0,
-        projects: data.user.projects || 0,
-        salary: data.user.salary || 0,
+        attendance: statsData.attendance || 0,
+        leaves: statsData.leaves || 0,
+        projects: statsData.projects || 0,
+        salary: statsData.salary || 0,
       });
 
     } catch (err) {
@@ -79,7 +92,7 @@ export default function Profile() {
     const token = localStorage.getItem("token");
 
     if (!password || !newPassword) {
-      alert("Fill both fields");
+      toast.error("Fill both fields");
       return;
     }
 
@@ -102,14 +115,14 @@ export default function Profile() {
       const data = await res.json();
 
       if (data.success) {
-        alert("Password updated");
+        toast.success("Password updated");
         setPassword("");
         setNewPassword("");
       } else {
-        alert("Wrong password");
+        toast.error("Wrong password");
       }
     } catch {
-      alert("Server error");
+      toast.error("Server error");
     }
   };
 
@@ -148,7 +161,9 @@ export default function Profile() {
           </button>
 
           <h1 className="text-4xl font-bold">
-            Settings Dashboard
+            {user.role==="employee"
+            ? "My Profile"
+            : "Profile Settings"}
           </h1>
         </div>
 
@@ -258,7 +273,11 @@ export default function Profile() {
             <p>Dark Mode</p>
 
             <button
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={()=>{
+              const mode=!darkMode;
+              setDarkMode(mode);
+              localStorage.setItem("darkMode",mode);
+              }}
               className={`px-6 py-2 rounded-full text-white ${
                 darkMode
                   ? "bg-green-500"

@@ -18,6 +18,7 @@ import myProjectRoutes from "./routes/myProjectRoutes.js";
 import ledgerRoutes from "./routes/ledgerRoutes.js";
 import invoiceRoutes from "./routes/invoiceRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
+import reportAnalyticsRoutes from "./routes/reportAnalyticsRoutes.js";
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use("/my-projects", myProjectRoutes);
 app.use("/ledger", ledgerRoutes);
 app.use("/invoices", invoiceRoutes);
 app.use("/inventory", inventoryRoutes);
+app.use("/analytics",reportAnalyticsRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server Working 🚀");
