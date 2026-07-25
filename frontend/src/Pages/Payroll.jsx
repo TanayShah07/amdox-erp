@@ -1,5 +1,19 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
+
 
 export default function Payroll() {
 
@@ -158,6 +172,37 @@ export default function Payroll() {
     marginBottom: "24px",
   };
 
+  const pieData = [
+    {
+      name: "Salary",
+      value: payroll.reduce(
+        (sum, p) => sum + Number(p.basic_salary || 0),
+        0
+      ),
+    },
+    {
+      name: "Bonus",
+      value: payroll.reduce(
+        (sum, p) => sum + Number(p.bonus || 0),
+        0
+      ),
+    },
+  ];
+
+  const barData = payroll.map((p) => ({
+    month: p.pay_date
+      ? p.pay_date.split("T")[0]
+      : "",
+    Credit: Number(p.basic_salary || 0),
+    Debit: Number(p.deductions || 0),
+  }));
+
+  const COLORS = [
+    "#22C55E",
+    "#EF4444",
+  ];
+
+  
   return (
   <div className="bg-gray-100 min-h-screen">
     <div className="p-8">
@@ -243,7 +288,7 @@ export default function Payroll() {
       <div className="grid md:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-2xl shadow p-5">
           <h2 className="text-xl font-bold mb-4">
-            Credit vs Debit
+            💼 Payroll Distribution
           </h2>
 
           <ResponsiveContainer width="100%" height={300}>

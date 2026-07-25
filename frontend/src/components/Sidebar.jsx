@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { ShoppingCart } from "lucide-react";
 import {
   LayoutDashboard,
   Users,
@@ -11,6 +12,7 @@ import {
   User,
   LogOut,
   ClipboardList,
+  BarChart3,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -40,6 +42,7 @@ export default function Sidebar() {
         path: "/leaves",
         icon: FileText,
       },
+      
       {
         name: "Profile",
         path: "/profile",
@@ -87,6 +90,16 @@ export default function Sidebar() {
         name: "Invoices",
         path: "/invoices",
         icon: Receipt,
+      },
+      {
+        name: "Reports & Analytics",
+        icon: BarChart3,
+        path: "/analytics",
+      },
+      {
+        name: "Purchase Orders",
+        path: "/purchase-orders",
+        icon: ShoppingCart,
       },
       {
         name: "Profile",
@@ -140,6 +153,16 @@ export default function Sidebar() {
         name: "Invoices",
         path: "/invoices",
         icon: Receipt,
+      },
+      {
+        name: "Reports & Analytics",
+        icon: BarChart3,
+        path: "/analytics",
+      },
+      {
+        name: "Purchase Orders",
+        path: "/purchase-orders",
+        icon: ShoppingCart,
       },
       {
         name: "Profile",

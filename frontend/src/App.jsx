@@ -1,21 +1,23 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import Employees from "./pages/Employees";
-import Profile from "./pages/Profile";
-import Projects from "./pages/Projects";
-import Attendance from "./pages/Attendance";
-import Leaves from "./pages/Leaves";
-import Payroll from "./pages/Payroll";
-import MyProjects from "./pages/MyProjects";
-import Ledger from "./pages/Ledger";
-import Inventory from "./pages/Inventory";
-import Invoices from "./pages/Invoices";
+import Auth from "./Pages/Auth";
+import Dashboard from "./Pages/Dashboard";
+import Employees from "./Pages/Employees";
+import Profile from "./Pages/Profile";
+import Projects from "./Pages/Projects";
+import Attendance from "./Pages/Attendance";
+import Leaves from "./Pages/Leaves";
+import Payroll from "./Pages/Payroll";
+import MyProjects from "./Pages/MyProjects";
+import Ledger from "./Pages/Ledger";
+import Inventory from "./Pages/Inventory";
+import Invoices from "./Pages/Invoices";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import ChatBot from "./components/ChatBot";
+import Analytics from "./Pages/Analytics";
+import PurchaseOrders from "./pages/PurchaseOrders";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -166,6 +168,28 @@ function App() {
             <AdminHrRoute>
               <MainLayout>
                 <Invoices />
+              </MainLayout>
+            </AdminHrRoute>
+          }
+        />
+
+        <Route
+          path="/analytics"
+          element={
+            <AdminHrRoute>
+              <MainLayout>
+                <Analytics />
+              </MainLayout>
+            </AdminHrRoute>
+          }
+        />
+        
+        <Route
+          path="/purchase-orders"
+          element={
+            <AdminHrRoute>
+              <MainLayout>
+                <PurchaseOrders />
               </MainLayout>
             </AdminHrRoute>
           }
