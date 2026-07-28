@@ -1,5 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
+import { Bell } from "lucide-react";
+
 import {
   LayoutDashboard,
   Users,
@@ -102,6 +104,16 @@ export default function Sidebar() {
         icon: ShoppingCart,
       },
       {
+        name: "Notifications",
+        path: "/notifications",
+        icon: Bell,
+      },
+      {
+        name: "Audit Logs",
+        path: "/audit-logs",
+        icon: ClipboardList,
+      },
+      {
         name: "Profile",
         path: "/profile",
         icon: User,
@@ -163,6 +175,16 @@ export default function Sidebar() {
         name: "Purchase Orders",
         path: "/purchase-orders",
         icon: ShoppingCart,
+      },
+      {
+        name: "Notifications",
+        path: "/notifications",
+        icon: Bell,
+      },
+      {
+        name: "Audit Logs",
+        path: "/audit-logs",
+        icon: ClipboardList,
       },
       {
         name: "Profile",

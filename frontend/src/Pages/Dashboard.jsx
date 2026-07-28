@@ -7,6 +7,7 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
+
   const [stats,setStats]=useState({
     employees:0,salary:0,projects:0,completedProjects:0,pendingProjects:0,
   });
@@ -52,10 +53,17 @@ export default function Dashboard() {
   const COLORS=["#10B981","#F59E0B"];
 
   const Card=({title,value,color,sub})=>(
-    <div className="bg-white rounded-2xl shadow hover:shadow-xl transition-all duration-300 p-6">
-      <p className="text-gray-500">{title}</p>
-      <h2 className={`text-3xl font-bold mt-2 ${color}`}>{value}</h2>
-      <p className="text-sm text-gray-400 mt-2">{sub}</p>
+    <div 
+      className="bg-white rounded-2xl shadow hover:shadow-xl transition-all duration-300 p-6">
+        <p 
+         className="text-gray-500">{title}
+        </p>
+        <h2 
+         className={`text-3xl font-bold mt-2 ${color}`}>{value}
+        </h2>
+        <p
+         className="text-sm text-gray-400 mt-2">{sub}
+        </p>
     </div>
   );
 
@@ -67,8 +75,8 @@ export default function Dashboard() {
           <p className="text-gray-500 mt-1">Here's what's happening in your organization today.</p>
         </div>
         <div className="flex items-center gap-4">
-          <p className="text-sm text-gray-500">{new Date().toLocaleDateString()}</p>
-          <button onClick={logout} className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl">Logout</button>
+          <p className="text-2x1 font-bold text-gray-800">{new Date().toLocaleDateString()}</p>
+          
         </div>
       </div>
 

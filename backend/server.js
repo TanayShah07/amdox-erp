@@ -20,6 +20,8 @@ import invoiceRoutes from "./routes/invoiceRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
 import reportAnalyticsRoutes from "./routes/reportAnalyticsRoutes.js";
 import purchaseOrderRoutes from "./routes/purchaseOrderRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import auditLogRoutes from "./routes/auditLogRoutes.js";
 
 const app = express();
 
@@ -47,6 +49,8 @@ app.use("/invoices", invoiceRoutes);
 app.use("/inventory", inventoryRoutes);
 app.use("/analytics",reportAnalyticsRoutes);
 app.use("/purchase-orders", purchaseOrderRoutes);
+app.use("/notifications", notificationRoutes);
+app.use("/audit-logs", auditLogRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server Working 🚀");

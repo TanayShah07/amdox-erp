@@ -1,5 +1,6 @@
 import express from "express";
 import pool from "../db.js";
+import { createAuditLog } from "../utils/auditLogger.js";
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ router.get("/", async (req, res) => {
     `);
 
     res.json(result.rows);
+
   } catch (err) {
     res.status(500).json({
       message: err.message,
@@ -52,6 +54,12 @@ router.post("/", async (req, res) => {
         salary,
         projects,
       ]
+    );
+
+    await createAuditLog(
+      "Admin",
+      "Employees",
+      `Added Employee ${name}`
     );
 
     res.json({

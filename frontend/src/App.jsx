@@ -17,7 +17,9 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import ChatBot from "./components/ChatBot";
 import Analytics from "./Pages/Analytics";
-import PurchaseOrders from "./pages/PurchaseOrders";
+import PurchaseOrders from "./Pages/PurchaseOrders";
+import Notifications from "./Pages/Notifications";
+import AuditLogs from "./Pages/AuditLogs";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -190,6 +192,28 @@ function App() {
             <AdminHrRoute>
               <MainLayout>
                 <PurchaseOrders />
+              </MainLayout>
+            </AdminHrRoute>
+          }
+        />
+
+        <Route
+          path="/notifications"
+          element={
+            <AdminHrRoute>
+              <MainLayout>
+                <Notifications />
+              </MainLayout>
+            </AdminHrRoute>
+          }
+        />
+
+        <Route
+          path="/audit-logs"
+          element={
+            <AdminHrRoute>
+              <MainLayout>
+                <AuditLogs />
               </MainLayout>
             </AdminHrRoute>
           }

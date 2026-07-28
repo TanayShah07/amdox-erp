@@ -301,6 +301,22 @@ export default function Ledger() {
         </div>
       )}
 
+      <div className="flex gap-3 mb-5">
+
+        <a href="http://localhost:5000/reports/invoices/pdf">
+        <button className="bg-red-500 text-white px-5 py-2 rounded-xl">
+        Export PDF
+        </button>
+        </a>
+
+        <a href="http://localhost:5000/reports/invoices/excel">
+        <button className="bg-green-500 text-white px-5 py-2 rounded-xl">
+        Export Excel
+        </button>
+        </a>
+ 
+      </div>
+
       <div className="flex flex-wrap gap-3 mb-6">
         <input
           type="text"
@@ -316,22 +332,7 @@ export default function Ledger() {
           onChange={(e) => setSelectedDate(e.target.value)}
           className="border p-3 rounded-xl"
         />
-
-        {(role === "admin" || role === "hr") && (
-          <>
-            <a href="http://localhost:5000/reports/ledger/pdf">
-              <button className="bg-red-500 text-white px-5 py-3 rounded-xl">
-                Export PDF
-              </button>
-            </a>
-
-            <a href="http://localhost:5000/reports/ledger/excel">
-              <button className="bg-green-500 text-white px-5 py-3 rounded-xl">
-                Export Excel
-              </button>
-            </a>
-          </>
-        )}
+        
       </div>
 
       {entries.length === 0 ? (

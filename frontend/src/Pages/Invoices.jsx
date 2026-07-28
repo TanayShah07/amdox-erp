@@ -144,23 +144,7 @@ export default function Invoices() {
 
       {(role === "admin" || role === "hr") && (
         <div className="bg-white p-5 rounded-xl shadow mb-6 space-y-3">
-
-          <div className="flex gap-3 mb-5">
-
-        <a href="http://localhost:5000/reports/invoices/pdf">
-        <button className="bg-red-500 text-white px-5 py-2 rounded-xl">
-        Export PDF
-        </button>
-        </a>
-
-        <a href="http://localhost:5000/reports/invoices/excel">
-        <button className="bg-green-500 text-white px-5 py-2 rounded-xl">
-        Export Excel
-        </button>
-        </a>
-
-      </div>
-
+         
           <input
             placeholder="Invoice Number"
             className="w-full border p-3 rounded"
@@ -276,6 +260,22 @@ export default function Invoices() {
           )}
         </div>
       )}
+
+       <div className="flex gap-3 mb-5">
+
+        <a href="http://localhost:5000/reports/invoices/pdf">
+        <button className="bg-red-500 text-white px-5 py-2 rounded-xl">
+        Export PDF
+        </button>
+        </a>
+
+        <a href="http://localhost:5000/reports/invoices/excel">
+        <button className="bg-green-500 text-white px-5 py-2 rounded-xl">
+        Export Excel
+        </button>
+        </a>
+ 
+      </div>
 
       
 
