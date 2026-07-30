@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { History, User, FolderOpen } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -22,13 +23,24 @@ export default function Analytics() {
     invoiceValue: 0,
     ledgerBalance: 0,
   });
+  const [activities, setActivities] = useState([]);
 
   useEffect(() => {
 
-    const load = () => {
-        fetch("http://localhost:5000/analytics")
-        .then((res) => res.json())
-        .then((data) => setReport(data));
+    const load = async () => {
+
+      const reportRes = await fetch("http://localhost:5000/analytics");
+      const reportData = await reportRes.json();
+      setReport(reportData);
+
+      const activityRes = await fetch(
+        "http://localhost:5000/analytics/recent-activity"
+      );
+
+      const activityData = await activityRes.json();
+
+      setActivities(activityData);
+
     };
 
     load();
@@ -235,6 +247,79 @@ export default function Analytics() {
             </ResponsiveContainer>
 
         </div>
+
+      </div>
+
+      <div className="mt-8 bg-white rounded-xl shadow hover:shadow-2xl transition-all duration-300 p-6">
+
+        <div className="flex items-center gap-3 mb-6">
+
+          <History className="text-blue-600" size={28} />
+
+          <h2 className="text-2xl font-bold">
+            Recent Activity
+          </h2>
+
+        </div>
+
+        {activities.length === 0 ? (
+
+          <p className="text-gray-500">
+            No recent activity found.
+          </p>
+
+        ) : (
+
+          <div className="space-y-4">
+
+            {activities.map((activity, index) => (
+
+              <div
+                key={index}
+                className="flex justify-between items-center border-b pb-3"
+              >
+
+                <div>
+
+                  <div className="flex items-center gap-2">
+
+                    <User
+                      size={16}
+                      className="text-blue-600"
+                    />
+
+                    <span className="font-semibold">
+                      {activity.username}
+                    </span>
+
+                    <FolderOpen
+                      size={16}
+                      className="text-green-600"
+                    />
+
+                    <span className="text-gray-500">
+                      {activity.module}
+                    </span>
+
+                  </div>
+
+                  <p className="mt-1 text-gray-700">
+                    {activity.action}
+                  </p>
+
+                </div>
+
+                <span className="text-sm text-gray-400">
+                  {new Date(activity.created_at).toLocaleString()}
+                </span>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        )}
 
       </div>
 

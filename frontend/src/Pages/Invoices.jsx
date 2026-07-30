@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function Invoices() {
   const role = localStorage.getItem("role");
+  const [loading, setLoading] = useState(false);
   const [invoices, setInvoices] = useState([]);
   const [form, setForm] = useState({
     invoice_number: "",
@@ -13,14 +15,30 @@ export default function Invoices() {
     gst_number: "",
     description: "",
   });
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [editId, setEditId] = useState(null);
 
   const loadData = async () => {
-    const res = await fetch("http://localhost:5000/invoices");
-    const data = await res.json();
-    setInvoices(Array.isArray(data) ? data : []);
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        "http://localhost:5000/invoices"
+      );
+
+      const data = await res.json();
+
+      setInvoices(
+        Array.isArray(data) ? data : []
+      );
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to load invoices");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -34,34 +52,105 @@ export default function Invoices() {
   }, []);
 
   const addInvoice = async () => {
-    await fetch("http://localhost:5000/invoices", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    });
 
-    
-    setForm({
-      invoice_number: "",
-      vendor_name: "",
-      amount: "",
-      status: "Pending",
-      due_date: "",
-      payment_method: "",
-      gst_number: "",
-      description: "",
-    });
+    if (
+      !form.invoice_number ||
+      !form.vendor_name ||
+      !form.amount ||
+      !form.payment_method ||
+      !form.due_date
+    ) {
+      toast.error("Please fill all required fields");
+      return;
+    }
 
-    loadData();
+    try {
+
+      const res = await fetch(
+        "http://localhost:5000/invoices",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(form),
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+
+        toast.success(data.message || "Invoice Added Successfully");
+
+        setForm({
+          invoice_number: "",
+          vendor_name: "",
+          amount: "",
+          status: "Pending",
+          due_date: "",
+          payment_method: "",
+          gst_number: "",
+          description: "",
+        });
+
+        loadData();
+
+      } else {
+
+        toast.error(data.message || "Failed to add invoice");
+
+      }
+
+    } catch (err) {
+
+      console.log(err);
+
+      toast.error("Server Error");
+
+    }
+
   };
 
   const deleteInvoice = async (id) => {
-    await fetch(`http://localhost:5000/invoices/${id}`, {
-      method: "DELETE",
-    });
-    loadData();
+
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this invoice?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+
+      const res = await fetch(
+        `http://localhost:5000/invoices/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+
+        toast.success(data.message || "Invoice Deleted");
+
+        loadData();
+
+      } else {
+
+        toast.error(data.message || "Delete Failed");
+
+      }
+
+    } catch (err) {
+
+      console.log(err);
+
+      toast.error("Server Error");
+
+    }
+
   };
 
   const editInvoice = (inv) => {
@@ -80,28 +169,66 @@ export default function Invoices() {
   };
 
   const updateInvoice = async () => {
-    await fetch(`http://localhost:5000/invoices/${editId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    });
 
-    setEditId(null);
+    if (
+      !form.invoice_number ||
+      !form.vendor_name ||
+      !form.amount ||
+      !form.payment_method ||
+      !form.due_date
+    ) {
+      toast.error("Please fill all required fields");
+      return;
+    }
 
-    setForm({
-      invoice_number: "",
-      vendor_name: "",
-      amount: "",
-      status: "Pending",
-      due_date: "",
-      payment_method: "",
-      gst_number: "",
-      description: "",
-    });
+    try {
 
-    loadData();
+      const res = await fetch(
+        `http://localhost:5000/invoices/${editId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(form),
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+
+        toast.success(data.message || "Invoice Updated");
+
+        setEditId(null);
+
+        setForm({
+          invoice_number: "",
+          vendor_name: "",
+          amount: "",
+          status: "Pending",
+          due_date: "",
+          payment_method: "",
+          gst_number: "",
+          description: "",
+        });
+
+        loadData();
+
+      } else {
+
+        toast.error(data.message || "Update Failed");
+
+      }
+
+    } catch (err) {
+
+      console.log(err);
+
+      toast.error("Server Error");
+
+    }
+
   };
 
   return (
@@ -143,121 +270,208 @@ export default function Invoices() {
       </div>
 
       {(role === "admin" || role === "hr") && (
-        <div className="bg-white p-5 rounded-xl shadow mb-6 space-y-3">
-         
-          <input
-            placeholder="Invoice Number"
-            className="w-full border p-3 rounded"
-            value={form.invoice_number}
-            onChange={(e)=>
-              setForm({...form,invoice_number:e.target.value})
-            }
-          />
+        <div className="bg-white rounded-2xl shadow p-6 mb-6">
 
-          <input
-            placeholder="Vendor Name"
-            className="w-full border p-3 rounded"
-            value={form.vendor_name}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                vendor_name: e.target.value,
-              })
-            }
-          />
+          <h2 className="text-2xl font-bold mb-6">
+            {editId ? "Update Invoice" : "Create New Invoice"}
+          </h2>
 
-          <input
-            placeholder="Amount"
-            type="number"
-            className="w-full border p-3 rounded"
-            value={form.amount}
-            onChange={(e) =>
-              setForm({ ...form, amount: e.target.value })
-            }
-          />
+          <div className="grid md:grid-cols-2 gap-5">
 
-          <input
-            placeholder="GST Number"
-            className="w-full border p-3 rounded"
-            value={form.gst_number}
-            onChange={(e)=>
-              setForm({...form,gst_number:e.target.value})
-            }
-          />
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                Invoice Number
+              </label>
 
-          <input
-            placeholder="Payment Method"
-            className="w-full border p-3 rounded"
-            value={form.payment_method}
-            onChange={(e)=>
-              setForm({...form,payment_method:e.target.value})
-            }
-          />
+              <input
+                className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none"
+                placeholder="INV-1001"
+                value={form.invoice_number}
+                onChange={(e)=>
+                  setForm({
+                    ...form,
+                    invoice_number:e.target.value
+                  })
+                }
+              />
+            </div>
 
-          <textarea
-            placeholder="Description"
-            className="w-full border p-3 rounded"
-            value={form.description}
-            onChange={(e)=>
-              setForm({...form,description:e.target.value})
-            }
-          />
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                Vendor Name
+              </label>
 
-          <select
-            className="w-full border p-3 rounded"
-            value={form.status}
-            onChange={(e) =>
-              setForm({ ...form, status: e.target.value })
-            }
-          >
-            <option>Pending</option>
-            <option>Paid</option>
-            <option>Overdue</option>
-          </select>
+              <input
+                className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none"
+                placeholder="ABC Pvt Ltd"
+                value={form.vendor_name}
+                onChange={(e)=>
+                  setForm({
+                    ...form,
+                    vendor_name:e.target.value
+                  })
+                }
+              />
+            </div>
 
-          <input
-            type="date"
-            className="w-full border p-3 rounded"
-            value={form.due_date}
-            onChange={(e) =>
-              setForm({ ...form, due_date: e.target.value })
-            }
-          />
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                Amount
+              </label>
 
-          <button
-            onClick={editId ? updateInvoice : addInvoice}
-            className={`text-white px-4 py-2 rounded ${
-              editId
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-purple-600 hover:bg-purple-700"
-            }`}
-          >
-            {editId ? "Update Invoice" : "Add Invoice"}
-          </button>
+              <input
+                type="number"
+                className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none"
+                placeholder="50000"
+                value={form.amount}
+                onChange={(e)=>
+                  setForm({
+                    ...form,
+                    amount:e.target.value
+                  })
+                }
+              />
+            </div>
 
-          {editId && (
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                GST Number
+              </label>
+
+              <input
+                className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none"
+                placeholder="29ABCDE1234F1Z5"
+                value={form.gst_number}
+                onChange={(e)=>
+                  setForm({
+                    ...form,
+                    gst_number:e.target.value
+                  })
+                }
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                Payment Method
+              </label>
+
+              <select
+                className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none"
+                value={form.payment_method}
+                onChange={(e)=>
+                  setForm({
+                    ...form,
+                    payment_method:e.target.value
+                  })
+                }
+              >
+                <option value="">Select</option>
+                <option>Cash</option>
+                <option>UPI</option>
+                <option>Bank Transfer</option>
+                <option>Cheque</option>
+                <option>Credit Card</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                Due Date
+              </label>
+
+              <input
+                type="date"
+                className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none"
+                value={form.due_date}
+                onChange={(e)=>
+                  setForm({
+                    ...form,
+                    due_date:e.target.value
+                  })
+                }
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                Status
+              </label>
+
+              <select
+                className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none"
+                value={form.status}
+                onChange={(e)=>
+                  setForm({
+                    ...form,
+                    status:e.target.value
+                  })
+                }
+              >
+                <option>Pending</option>
+                <option>Paid</option>
+                <option>Overdue</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold mb-2">
+                Description
+              </label>
+
+              <textarea
+                rows={4}
+                className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none"
+                placeholder="Enter invoice description..."
+                value={form.description}
+                onChange={(e)=>
+                  setForm({
+                    ...form,
+                    description:e.target.value
+                  })
+                }
+              />
+            </div>
+
+          </div>
+
+          <div className="flex gap-4 mt-6">
+
             <button
-              onClick={() => {
-
-                setEditId(null);
-
-                setForm({
-                  invoice_number: "",
-                  vendor_name: "",
-                  amount: "",
-                  status: "Pending",
-                  due_date: "",
-                  payment_method: "",
-                  gst_number: "",
-                  description: "",
-                });
-
-              }}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+              onClick={editId ? updateInvoice : addInvoice}
+              className={`px-6 py-3 rounded-xl text-white font-semibold transition ${
+                editId
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-purple-600 hover:bg-purple-700"
+              }`}
             >
-              Cancel
+              {editId ? "Update Invoice" : "Add Invoice"}
             </button>
-          )}
+
+            {editId && (
+              <button
+                onClick={()=>{
+                  setEditId(null);
+
+                  setForm({
+                    invoice_number:"",
+                    vendor_name:"",
+                    amount:"",
+                    status:"Pending",
+                    due_date:"",
+                    payment_method:"",
+                    gst_number:"",
+                    description:"",
+                  });
+                }}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-xl"
+              >
+                Cancel
+              </button>
+            )}
+
+          </div>
+
         </div>
       )}
 
@@ -311,92 +525,157 @@ export default function Invoices() {
 
       ) : (
 
-      <div className="space-y-4">
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+
         {invoices
-          .filter((inv) => {
+        .filter((inv)=>{
 
-            const matchVendor =
-              inv.vendor_name
-                ?.toLowerCase()
-                .includes(search.toLowerCase());
+        const matchVendor=
+        inv.vendor_name
+        ?.toLowerCase()
+        .includes(search.toLowerCase());
 
-            const matchStatus =
-              statusFilter === "All" ||
-              inv.status === statusFilter;
+        const matchStatus=
+        statusFilter==="All"||
+        inv.status===statusFilter;
 
-            return matchVendor && matchStatus;
+        return matchVendor && matchStatus;
 
-          })
-          .map((inv) => (
+        })
+        .sort((a,b)=>b.id-a.id)
+        .map((inv)=>(
 
-          <div
-            key={inv.id}
-            className="bg-white rounded-2xl shadow hover:shadow-xl transition-all duration-300 p-5 flex justify-between"
-          >
-            <div>
-              <h2 className="font-bold text-xl">
-                {inv.invoice_number || `INV-${inv.id}`}
-              </h2>
+        <div
+        key={inv.id}
+        className="bg-white rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+        >
 
-              <p>
-                <b>Vendor :</b> {inv.vendor_name}
-              </p>
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-5">
 
-              <p>
-                <b>Amount :</b> ₹{Number(inv.amount).toLocaleString("en-IN")}
-              </p>
+        <div className="flex justify-between items-center">
 
-              <p>
-                <b>GST :</b> {inv.gst_number}
-              </p>
+        <div>
 
-              <p>
-                <b>Payment :</b> {inv.payment_method}
-              </p>
+        <h2 className="text-xl font-bold">
+        {inv.invoice_number || `INV-${inv.id}`}
+        </h2>
 
-              <p>
-                <b>Due :</b> {inv.due_date?.split("T")[0]}
-              </p>
+        <p className="text-sm opacity-90">
+        {inv.vendor_name}
+        </p>
 
-              <p>
-                <b>Description :</b> {inv.description}
-              </p>
+        </div>
 
-                            <span
-                className={`px-3 py-1 rounded-full text-white text-sm ${
-                  inv.status === "Paid"
-                    ? "bg-green-500"
-                    : inv.status === "Pending"
-                    ? "bg-yellow-500"
-                    : "bg-red-500"
-                }`}
-              >
-                {inv.status === "Paid"
-                  ? "✅ Paid"
-                  : inv.status === "Pending"
-                  ? "⏳ Pending"
-                  : "❌ Overdue"}
-              </span>
-            </div>
+        <span
+        className={`px-3 py-1 rounded-full text-xs font-bold ${
+        inv.status==="Paid"
+        ?"bg-green-500"
+        :inv.status==="Pending"
+        ?"bg-yellow-500 text-black"
+        :"bg-red-500"
+        }`}
+        >
 
-            {(role === "admin" || role === "hr") && (
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => editInvoice(inv)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                >
-                  Edit
-                </button>
+        {inv.status}
 
-                <button
-                  onClick={() => deleteInvoice(inv.id)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-                >
-                  Delete
-                </button>
-              </div>
-            )}
-          </div>
+        </span>
+
+        </div>
+
+        </div>
+
+        <div className="p-5 space-y-3">
+
+        <div className="flex justify-between">
+
+        <span className="text-gray-500">
+        Amount
+        </span>
+
+        <b className="text-green-600">
+        ₹{Number(inv.amount).toLocaleString("en-IN")}
+        </b>
+
+        </div>
+
+        <div className="flex justify-between">
+
+        <span className="text-gray-500">
+        GST
+        </span>
+
+        <b>
+        {inv.gst_number || "-"}
+        </b>
+
+        </div>
+
+        <div className="flex justify-between">
+
+        <span className="text-gray-500">
+        Payment
+        </span>
+
+        <b>
+        {inv.payment_method || "-"}
+        </b>
+
+        </div>
+
+        <div className="flex justify-between">
+
+        <span className="text-gray-500">
+        Due Date
+        </span>
+
+        <b>
+        {inv.due_date?.split("T")[0]}
+        </b>
+
+        </div>
+
+        <div>
+
+        <p className="text-gray-500 mb-1">
+        Description
+        </p>
+
+        <p className="text-gray-700 text-sm">
+        {inv.description || "No Description"}
+        </p>
+
+        </div>
+
+        {(role==="admin"||role==="hr") && (
+
+        <div className="flex gap-3 pt-4">
+
+        <button
+        onClick={()=>editInvoice(inv)}
+        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl"
+        >
+
+        Edit
+
+        </button>
+
+        <button
+        onClick={()=>deleteInvoice(inv.id)}
+        className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl"
+        >
+
+        Delete
+
+        </button>
+
+        </div>
+
+        )}
+
+        </div>
+
+        </div>
+
         ))}
       </div>
       )}

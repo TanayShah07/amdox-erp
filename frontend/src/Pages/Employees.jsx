@@ -7,7 +7,7 @@ import {
   Search,
   Plus,
   Download,
-  FileText,
+  FileText, 
   Users,
   Briefcase,
   IndianRupee,
@@ -140,6 +140,22 @@ export default function Employees() {
     0
   );
 
+  const exportPDF = () => {
+    const doc = new jsPDF();
+
+    autoTable(doc, {
+      head: [["Employee ID", "Name", "Role", "Salary"]],
+      body: filteredEmployees.map((e) => [
+        e.employee_code,
+        e.name,
+        e.role,
+        e.salary,
+      ]),
+    });
+
+    doc.save("employees.pdf");
+  };
+
   const exportExcel = async () => {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Employees");
@@ -166,21 +182,7 @@ export default function Employees() {
     link.click();
   };
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
-
-    autoTable(doc, {
-      head: [["Employee ID", "Name", "Role", "Salary"]],
-      body: filteredEmployees.map((e) => [
-        e.employee_code,
-        e.name,
-        e.role,
-        e.salary,
-      ]),
-    });
-
-    doc.save("employees.pdf");
-  };
+  
 
   return (
     <div className="space-y-6">
@@ -288,20 +290,21 @@ export default function Employees() {
         </select>
 
         <button
-          onClick={exportExcel}
-          className="bg-green-600 text-white px-4 rounded-xl flex items-center gap-2"
-        >
-          <Download size={18} />
-          Excel
-        </button>
-
-        <button
           onClick={exportPDF}
           className="bg-red-600 text-white px-4 rounded-xl flex items-center gap-2"
         >
           <FileText size={18} />
           PDF
         </button>
+
+        <button
+          onClick={exportExcel}
+          className="bg-green-600 text-white px-4 rounded-xl flex items-center gap-2"
+        >
+          <Download size={18} />
+          Excel
+        </button>
+        
 
       </div>
 

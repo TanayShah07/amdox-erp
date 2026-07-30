@@ -11,8 +11,10 @@ import {
   Edit,
   Trash2,
   UserPlus,
+  FileSpreadsheet,
+  FileText,
   Check,
-  X
+  X,
 } from "lucide-react";
 
 const Projects = () => {
@@ -353,6 +355,20 @@ const deleteProject = async (id) => {
 
 };
 
+const downloadPDF = () => {
+  window.open(
+    "http://localhost:5000/projects/pdf",
+    "_blank"
+  );
+};
+
+const downloadExcel = () => {
+  window.open(
+    "http://localhost:5000/projects/excel",
+    "_blank"
+  );
+};
+
 
 // =========================
 // EDIT PROJECT
@@ -428,25 +444,37 @@ Manage, assign and monitor company projects
 
 </div>
 
-{(role === "admin" || role === "hr") && (
+<div className="flex gap-3">
 
-<button
+  <button
+    onClick={downloadPDF}
+    className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl flex items-center gap-2"
+  >
+    <FileText size={18} />
+    PDF
+  </button>
 
-onClick={() => setShowForm(!showForm)}
+  <button
+    onClick={downloadExcel}
+    className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-xl flex items-center gap-2"
+  >
+    <FileSpreadsheet size={18} />
+    Excel
+  </button>
 
-className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl"
-
->
-
-<Plus size={18}/>
-
-New Project
-
-</button>
-
-)}
+  {(role === "admin" || role === "hr") && (
+    <button
+      onClick={() => setShowForm(!showForm)}
+      className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl flex items-center gap-2"
+    >
+      <Plus size={18} />
+      New Project
+    </button>
+  )}
 
 </div>
+
+</div> {/* <-- closes the HEADER div */}
 
 
 

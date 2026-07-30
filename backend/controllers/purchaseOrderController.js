@@ -1,4 +1,6 @@
 import pool from "../db.js";
+import { createAuditLog } from "../utils/auditLogger.js";
+import { createNotification } from "../utils/createNotification.js";
 
 // Get All Purchase Orders
 export const getPurchaseOrders = async (req, res) => {
@@ -65,6 +67,18 @@ export const addPurchaseOrder = async (req, res) => {
       ]
     );
 
+    await createAuditLog(
+      "Admin",
+      "Purchase Orders",
+      `Created Purchase Order ${po_number}`
+    );
+
+    await createNotification(
+      "Purchase Order Created",
+      `Purchase Order ${po_number} has been created.`,
+      "success"
+    );
+
     res.json(result.rows[0]);
   } catch (err) {
     console.log(err);
@@ -121,6 +135,18 @@ export const updatePurchaseOrder = async (req, res) => {
       ]
     );
 
+    await createAuditLog(
+      "Admin",
+      "Purchase Orders",
+      `Updated Purchase Order ${po_number}`
+    );
+
+    await createNotification(
+      "Purchase Order Updated",
+      `Purchase Order ${po_number} was updated.`,
+      "info"
+    );
+
     res.json({
       success: true,
       message: "Purchase Order Updated Successfully",
@@ -137,19 +163,45 @@ export const updatePurchaseOrder = async (req, res) => {
 // Delete Purchase Order
 export const deletePurchaseOrder = async (req, res) => {
   try {
+
+    const purchaseOrder = await pool.query(
+      `
+      SELECT po_number
+      FROM purchase_orders
+      WHERE id=$1
+      `,
+      [req.params.id]
+    );
+
     await pool.query(
       "DELETE FROM purchase_orders WHERE id=$1",
       [req.params.id]
+    );
+
+    await createAuditLog(
+      "Admin",
+      "Purchase Orders",
+      `Deleted Purchase Order ${purchaseOrder.rows[0]?.po_number || ""}`
+    );
+
+    await createNotification(
+      "Purchase Order Deleted",
+      `Purchase Order ${purchaseOrder.rows[0]?.po_number || "PO"} was deleted.`,
+      "error"
     );
 
     res.json({
       success: true,
       message: "Purchase Order Deleted",
     });
+
   } catch (err) {
+
     console.log(err);
+
     res.status(500).json({
       message: "Delete Failed",
     });
+
   }
 };

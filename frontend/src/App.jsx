@@ -20,6 +20,7 @@ import Analytics from "./Pages/Analytics";
 import PurchaseOrders from "./Pages/PurchaseOrders";
 import Notifications from "./Pages/Notifications";
 import AuditLogs from "./Pages/AuditLogs";
+import Landing from "./pages/Landing";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -63,6 +64,7 @@ function App() {
       <Toaster position="top-right" />
 
       <Routes>
+        <Route path="/" element={<Landing/>}/>
         <Route path="/" element={<Auth />} />
 
         <Route

@@ -1,16 +1,24 @@
 import pool from "../db.js";
+import { createAuditLog } from "../utils/auditLogger.js";
+import { createNotification } from "../utils/createNotification.js";
 
+// GET ALL INVOICES
 export const getInvoices = async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT * FROM invoices ORDER BY id DESC"
     );
+
     res.json(result.rows);
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
+// ADD INVOICE
 export const addInvoice = async (req, res) => {
   try {
 
@@ -53,17 +61,33 @@ export const addInvoice = async (req, res) => {
       ]
     );
 
+    await createAuditLog(
+      "Admin",
+      "Invoices",
+      `Created Invoice ${invoice_number}`
+    );
+
+    await createNotification(
+      "Invoice Created",
+      `Invoice ${invoice_number} was created successfully.`,
+      "success"
+    );
+
     res.json(result.rows[0]);
 
   } catch (err) {
+
     console.log(err);
+
     res.status(500).json({
-      success:false,
-      message:err.message
+      success: false,
+      message: err.message
     });
+
   }
 };
 
+// UPDATE INVOICE
 export const updateInvoice = async (req, res) => {
   try {
 
@@ -82,14 +106,14 @@ export const updateInvoice = async (req, res) => {
       `
       UPDATE invoices
       SET
-      invoice_number=$1,
-      vendor_name=$2,
-      amount=$3,
-      status=$4,
-      due_date=$5,
-      payment_method=$6,
-      gst_number=$7,
-      description=$8
+        invoice_number=$1,
+        vendor_name=$2,
+        amount=$3,
+        status=$4,
+        due_date=$5,
+        payment_method=$6,
+        gst_number=$7,
+        description=$8
       WHERE id=$9
       `,
       [
@@ -101,8 +125,20 @@ export const updateInvoice = async (req, res) => {
         payment_method,
         gst_number,
         description,
-        req.params.id,
+        req.params.id
       ]
+    );
+
+    await createAuditLog(
+      "Admin",
+      "Invoices",
+      `Updated Invoice ${invoice_number}`
+    );
+
+    await createNotification(
+      "Invoice Updated",
+      `Invoice ${invoice_number} was updated successfully.`,
+      "info"
     );
 
     res.json({
@@ -111,23 +147,58 @@ export const updateInvoice = async (req, res) => {
     });
 
   } catch (err) {
+
     console.log(err);
+
     res.status(500).json({
       success: false,
       message: "Update Failed",
     });
+
   }
 };
 
+// DELETE INVOICE
 export const deleteInvoice = async (req, res) => {
   try {
+
+    const invoice = await pool.query(
+      `
+      SELECT invoice_number
+      FROM invoices
+      WHERE id=$1
+      `,
+      [req.params.id]
+    );
+
     await pool.query(
       "DELETE FROM invoices WHERE id=$1",
       [req.params.id]
     );
 
-    res.json({ success: true });
+    await createAuditLog(
+      "Admin",
+      "Invoices",
+      `Deleted Invoice ${invoice.rows[0]?.invoice_number || ""}`
+    );
+
+    await createNotification(
+      "Invoice Deleted",
+      `Invoice ${invoice.rows[0]?.invoice_number || "Invoice"} was deleted.`,
+      "error"
+    );
+
+    res.json({
+      success: true,
+    });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+
+    console.log(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+
   }
 };

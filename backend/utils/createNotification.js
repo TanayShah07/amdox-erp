@@ -3,7 +3,7 @@ import pool from "../db.js";
 export const createNotification = async (
   title,
   message,
-  type = "general"
+  type = "info"
 ) => {
   try {
     await pool.query(
@@ -15,6 +15,6 @@ export const createNotification = async (
       [title, message, type]
     );
   } catch (err) {
-    console.log("Notification Error:", err.message);
+    console.log("Notification Error:", err);
   }
 };

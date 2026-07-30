@@ -1,5 +1,7 @@
 import express from "express";
 import pool from "../db.js";
+import { createAuditLog } from "../utils/auditLogger.js";
+import { createNotification } from "../utils/createNotification.js";
 
 import {
   getInventory,
@@ -10,7 +12,9 @@ import {
 const router = express.Router();
 
 router.get("/", getInventory);
+
 router.post("/", addInventory);
+
 router.delete("/:id", deleteInventory);
 
 
@@ -28,7 +32,6 @@ router.put("/:id", async (req, res) => {
       reorder_level
     } = req.body;
 
-
     await pool.query(
       `
       UPDATE inventory
@@ -42,35 +45,44 @@ router.put("/:id", async (req, res) => {
       WHERE id=$7
       `,
       [
-      item_name,
-      category,
-      Number(quantity),
-      Number(unit_price),
-      supplier,
-      Number(reorder_level),
-      req.params.id
+        item_name,
+        category,
+        Number(quantity),
+        Number(unit_price),
+        supplier,
+        Number(reorder_level),
+        req.params.id
       ]
     );
 
+    await createAuditLog(
+      "Admin",
+      "Inventory",
+      `Updated inventory item ${item_name}`
+    );
+
+    await createNotification(
+      "Inventory Updated",
+      `${item_name} inventory was updated.`,
+      "info"
+    );
 
     res.json({
-      success:true,
-      message:"Inventory updated successfully"
+      success: true,
+      message: "Inventory updated successfully"
     });
 
-
-  } catch(err){
+  } catch (err) {
 
     console.log(err);
 
     res.status(500).json({
-      success:false,
-      message:"Update failed"
+      success: false,
+      message: "Update failed"
     });
 
   }
 
 });
-
 
 export default router;

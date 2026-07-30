@@ -226,13 +226,13 @@ const clockOut = async () => {
 
           {role !== "employee" && (
           <div className="flex gap-4 mb-5">
-            <a href="http://localhost:5000/reports/attendance/pdf">
+            <a href="http://localhost:5000/attendance/pdf">
               <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-lg">
                 Export PDF
               </button>
             </a>
 
-            <a href="http://localhost:5000/reports/attendance/excel">
+            <a href="http://localhost:5000/attendance/excel">
               <button className="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-lg">
                 Export Excel
               </button>

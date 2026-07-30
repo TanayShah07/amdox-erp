@@ -429,13 +429,13 @@ export default function Payroll() {
 
         <div className="flex gap-4 mb-5">
 
-          <a href="http://localhost:5000/reports/payroll/pdf">
+          <a href="http://localhost:5000/payroll/pdf">
             <button className="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-lg">
               Export PDF
             </button>
           </a>
 
-          <a href="http://localhost:5000/reports/payroll/excel">
+          <a href="http://localhost:5000/payroll/excel">
             <button className="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-lg">
               Export Excel
             </button>

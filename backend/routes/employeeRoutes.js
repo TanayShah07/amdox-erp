@@ -1,6 +1,7 @@
 import express from "express";
 import pool from "../db.js";
 import { createAuditLog } from "../utils/auditLogger.js";
+import { createNotification } from "../utils/createNotification.js";
 
 const router = express.Router();
 
@@ -61,6 +62,11 @@ router.post("/", async (req, res) => {
       "Employees",
       `Added Employee ${name}`
     );
+    await createNotification(
+      "New Employee Added",
+      `${name} has been added to the Employees module.`,
+      "success"
+    );
 
     res.json({
       success: true,
@@ -105,6 +111,17 @@ router.put("/:id", async (req, res) => {
       ]
     );
 
+    await createAuditLog(
+      "Employee Updated",
+      "Employees"
+    );
+
+    await createNotification(
+      "Employee Updated",
+      `${name} was updated successfully.`,
+      "info"
+    );
+
     res.json({
       success: true,
       employee: result.rows[0],
@@ -118,12 +135,32 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
+    const employee = await pool.query(
+      `
+      SELECT name
+      FROM employees
+      WHERE id=$1
+      `,
+      [req.params.id]
+    );
+
     await pool.query(
       `
       DELETE FROM employees
-      WHERE id = $1
+      WHERE id=$1
       `,
       [req.params.id]
+    );
+
+    await createAuditLog(
+      "Employee Deleted",
+      "Employees"
+    );
+
+    await createNotification(
+      "Employee Deleted",
+      `${employee.rows[0]?.name || "Employee"} was deleted.`,
+      "error"
     );
 
     res.json({
