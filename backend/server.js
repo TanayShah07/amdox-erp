@@ -23,6 +23,7 @@ import purchaseOrderRoutes from "./routes/purchaseOrderRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import auditLogRoutes from "./routes/auditLogRoutes.js";
 
+
 const app = express();
 
 console.log(
@@ -51,6 +52,7 @@ app.use("/analytics",reportAnalyticsRoutes);
 app.use("/purchase-orders", purchaseOrderRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/audit-logs", auditLogRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("Server Working 🚀");
